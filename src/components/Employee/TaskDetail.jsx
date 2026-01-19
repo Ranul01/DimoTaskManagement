@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
@@ -55,17 +61,18 @@ const TaskDetail = () => {
   useEffect(() => {
     const markAdminMessagesAsRead = async () => {
       if (!task || !task.remarksChat || task.remarksChat.length === 0) return;
-      
+
       const hasUnreadAdminMessages = task.remarksChat.some(
         (msg) => msg.senderRole === "admin" && !msg.employeeRead
       );
-      
+
       if (hasUnreadAdminMessages) {
         const updatedChat = task.remarksChat.map((msg) => ({
           ...msg,
-          employeeRead: msg.senderRole === "admin" ? true : msg.employeeRead || false
+          employeeRead:
+            msg.senderRole === "admin" ? true : msg.employeeRead || false,
         }));
-        
+
         try {
           await updateDoc(doc(db, "tasks", taskId), {
             remarksChat: updatedChat,
@@ -75,7 +82,7 @@ const TaskDetail = () => {
         }
       }
     };
-    
+
     if (task) {
       markAdminMessagesAsRead();
     }
@@ -104,13 +111,13 @@ const TaskDetail = () => {
   // Helper function to get rejection date from status history
   const getRejectionDate = () => {
     if (!task || !task.statusHistory) return null;
-    
+
     const rejections = task.statusHistory.filter(
       (history) => history.status === "rejected"
     );
-    
+
     if (rejections.length === 0) return null;
-    
+
     const latestRejection = rejections[rejections.length - 1];
     return latestRejection.changedAt;
   };
@@ -118,13 +125,13 @@ const TaskDetail = () => {
   // Helper function to get approval date from status history
   const getApprovalDate = () => {
     if (!task || !task.statusHistory) return null;
-    
+
     const approvals = task.statusHistory.filter(
       (history) => history.status === "approved"
     );
-    
+
     if (approvals.length === 0) return null;
-    
+
     const latestApproval = approvals[approvals.length - 1];
     return latestApproval.changedAt;
   };
@@ -143,7 +150,7 @@ const TaskDetail = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (!message.trim() || task.approved) return;
 
     setSending(true);
@@ -312,6 +319,20 @@ const TaskDetail = () => {
               <p className="text-xl font-semibold text-gray-900">{task.name}</p>
             </div>
 
+            {/* Task Details */}
+            {task.details && (
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Task Details
+                </label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {task.details}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Assigned Employees */}
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-2">
@@ -444,7 +465,8 @@ const TaskDetail = () => {
                       />
                     </svg>
                     <p className="text-sm text-red-700">
-                      Rejected on: {new Date(getRejectionDate()).toLocaleString("en-US", {
+                      Rejected on:{" "}
+                      {new Date(getRejectionDate()).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -496,7 +518,8 @@ const TaskDetail = () => {
                       />
                     </svg>
                     <p className="text-sm text-green-700">
-                      Approved on: {new Date(getApprovalDate()).toLocaleString("en-US", {
+                      Approved on:{" "}
+                      {new Date(getApprovalDate()).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -560,7 +583,9 @@ const TaskDetail = () => {
                         />
                       </svg>
                       <p className="font-medium">No messages yet</p>
-                      <p className="text-sm mt-1">Start a conversation about this task</p>
+                      <p className="text-sm mt-1">
+                        Start a conversation about this task
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -569,7 +594,9 @@ const TaskDetail = () => {
                       <div
                         key={index}
                         className={`flex ${
-                          msg.senderRole === "employee" ? "justify-end" : "justify-start"
+                          msg.senderRole === "employee"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
                         <div

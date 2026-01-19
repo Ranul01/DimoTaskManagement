@@ -71,13 +71,13 @@ const EmployeeTasks = () => {
   // Helper function to get rejection date from status history
   const getRejectionDate = (task) => {
     if (!task.statusHistory) return null;
-    
+
     const rejections = task.statusHistory.filter(
       (history) => history.status === "rejected"
     );
-    
+
     if (rejections.length === 0) return null;
-    
+
     const latestRejection = rejections[rejections.length - 1];
     return latestRejection.changedAt;
   };
@@ -85,13 +85,13 @@ const EmployeeTasks = () => {
   // Helper function to get approval date from status history
   const getApprovalDate = (task) => {
     if (!task.statusHistory) return null;
-    
+
     const approvals = task.statusHistory.filter(
       (history) => history.status === "approved"
     );
-    
+
     if (approvals.length === 0) return null;
-    
+
     const latestApproval = approvals[approvals.length - 1];
     return latestApproval.changedAt;
   };
@@ -211,7 +211,7 @@ const EmployeeTasks = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasks.map((task) => {
               const unreadCount = getUnreadEmployeeMessages(task);
-              
+
               return (
                 <div
                   key={task.id}
@@ -235,6 +235,20 @@ const EmployeeTasks = () => {
                         {new Date(task.createdAt).toLocaleDateString()}
                       </span>
                     </div>
+
+                    {/* Task Details */}
+                    {task.details && (
+                      <div className="pt-3 border-t border-gray-200">
+                        <p className="text-xs font-medium text-gray-600 mb-2">
+                          Details:
+                        </p>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+                            {task.details}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Status */}
                     <div className="flex items-center justify-between">
@@ -327,7 +341,8 @@ const EmployeeTasks = () => {
                         </p>
                         {getRejectionDate(task) && (
                           <p className="text-xs text-red-600">
-                            Rejected on: {new Date(getRejectionDate(task)).toLocaleString()}
+                            Rejected on:{" "}
+                            {new Date(getRejectionDate(task)).toLocaleString()}
                           </p>
                         )}
                       </div>
@@ -335,7 +350,7 @@ const EmployeeTasks = () => {
 
                     {/* Latest Message Preview - Only if messages exist */}
                     {getLatestMessage(task) && (
-                      <div 
+                      <div
                         className="bg-purple-50 border border-purple-200 rounded-lg p-3 cursor-pointer hover:bg-purple-100 transition"
                         onClick={() => handleChatClick(task)}
                       >
@@ -343,11 +358,13 @@ const EmployeeTasks = () => {
                           <p className="text-xs font-medium text-purple-800">
                             Latest Message:
                           </p>
-                          <span className={`px-2 py-0.5 text-xs rounded-full ${
-                            getLatestMessage(task).senderRole === 'admin' 
-                              ? 'bg-blue-100 text-blue-700' 
-                              : 'bg-green-100 text-green-700'
-                          }`}>
+                          <span
+                            className={`px-2 py-0.5 text-xs rounded-full ${
+                              getLatestMessage(task).senderRole === "admin"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
                             {getLatestMessage(task).sentBy}
                           </span>
                         </div>
@@ -356,7 +373,8 @@ const EmployeeTasks = () => {
                         </p>
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-xs text-purple-600">
-                            {task.remarksChat.length} message(s) • Click to view chat
+                            {task.remarksChat.length} message(s) • Click to view
+                            chat
                           </p>
                           {unreadCount > 0 && (
                             <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
@@ -403,10 +421,14 @@ const EmployeeTasks = () => {
                           </svg>
                           <span>Chat</span>
                           {task.remarksChat && task.remarksChat.length > 0 && (
-                            <span className={`${
-                              unreadCount > 0 ? 'bg-red-500' : 'bg-purple-600'
-                            } text-white text-xs rounded-full w-5 h-5 flex items-center justify-center`}>
-                              {unreadCount > 0 ? unreadCount : task.remarksChat.length}
+                            <span
+                              className={`${
+                                unreadCount > 0 ? "bg-red-500" : "bg-purple-600"
+                              } text-white text-xs rounded-full w-5 h-5 flex items-center justify-center`}
+                            >
+                              {unreadCount > 0
+                                ? unreadCount
+                                : task.remarksChat.length}
                             </span>
                           )}
                         </button>
@@ -545,17 +567,18 @@ const ChatModal = ({ task, employeeName, onClose }) => {
   useEffect(() => {
     const markMessagesAsRead = async () => {
       if (!task.remarksChat || task.remarksChat.length === 0) return;
-      
+
       const hasUnread = task.remarksChat.some(
         (msg) => msg.senderRole === "employee" && !msg.adminRead
       );
-      
+
       if (hasUnread) {
         const updatedChat = task.remarksChat.map((msg) => ({
           ...msg,
-          adminRead: msg.senderRole === "employee" ? true : msg.adminRead || false
+          adminRead:
+            msg.senderRole === "employee" ? true : msg.adminRead || false,
         }));
-        
+
         try {
           await updateDoc(doc(db, "tasks", task.id), {
             remarksChat: updatedChat,
@@ -565,7 +588,7 @@ const ChatModal = ({ task, employeeName, onClose }) => {
         }
       }
     };
-    
+
     markMessagesAsRead();
   }, [task.id, task.remarksChat]);
 
@@ -589,7 +612,7 @@ const ChatModal = ({ task, employeeName, onClose }) => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (!message.trim()) return;
 
     setSending(true);
@@ -674,7 +697,9 @@ const ChatModal = ({ task, employeeName, onClose }) => {
                   />
                 </svg>
                 <p className="text-lg font-medium">No messages yet</p>
-                <p className="text-sm mt-1">Start a conversation with {employeeName}</p>
+                <p className="text-sm mt-1">
+                  Start a conversation with {employeeName}
+                </p>
               </div>
             </div>
           ) : (
@@ -828,7 +853,8 @@ const RejectTaskModal = ({ taskId, onClose }) => {
             />
             {!rejectionReason.trim() && (
               <p className="text-xs text-gray-500 mt-2">
-                A detailed rejection reason helps the employee understand what needs to be corrected.
+                A detailed rejection reason helps the employee understand what
+                needs to be corrected.
               </p>
             )}
           </div>
@@ -858,7 +884,7 @@ const RejectTaskModal = ({ taskId, onClose }) => {
 const EditTaskModal = ({ task, projectId, onClose }) => {
   // Format date from ISO string to YYYY-MM-DD
   const formatDateForInput = (isoString) => {
-    return new Date(isoString).toISOString().split('T')[0];
+    return new Date(isoString).toISOString().split("T")[0];
   };
 
   const [taskData, setTaskData] = useState({
@@ -868,7 +894,9 @@ const EditTaskModal = ({ task, projectId, onClose }) => {
   });
   const [loading, setLoading] = useState(false);
   const [allEmployees, setAllEmployees] = useState([]);
-  const [selectedEmployees, setSelectedEmployees] = useState(task.assignedTo || []);
+  const [selectedEmployees, setSelectedEmployees] = useState(
+    task.assignedTo || []
+  );
 
   useEffect(() => {
     // Fetch project to get all employees
@@ -894,7 +922,7 @@ const EditTaskModal = ({ task, projectId, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (selectedEmployees.length === 0) {
       alert("Please select at least one employee");
       return;
@@ -1044,7 +1072,7 @@ const CreateTaskModal = ({ projectId, employeeId, employeeName, onClose }) => {
   // Get today's date in YYYY-MM-DD format for default values
   const getTodayDate = () => {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    return today.toISOString().split("T")[0];
   };
 
   const [taskData, setTaskData] = useState({

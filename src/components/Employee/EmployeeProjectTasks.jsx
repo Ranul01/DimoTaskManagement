@@ -127,6 +127,18 @@ const EmployeeProjectTasks = () => {
                     </span>
                   </div>
 
+                  {/* Task Details Preview */}
+                  {task.details && (
+                    <div className="pt-3 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-600 mb-1">
+                        Details:
+                      </p>
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {task.details}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Status */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-600">
