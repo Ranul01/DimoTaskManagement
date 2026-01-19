@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
@@ -16,10 +22,10 @@ const TaskDetail = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [pendingHoldReason, setPendingHoldReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const messagesEndRef = useRef(null);
+  // const [message, setMessage] = useState("");
+  // const [sending, setSending] = useState(false);
+  // const [messages, setMessages] = useState([]);
+  // const messagesEndRef = useRef(null);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -29,7 +35,7 @@ const TaskDetail = () => {
           const taskData = { id: taskDoc.id, ...taskDoc.data() };
           setTask(taskData);
           setPendingStatus(taskData.status);
-          setMessages(taskData.remarksChat || []);
+          // setMessages(taskData.remarksChat || []);
 
           // Fetch employee details
           const employeePromises = taskData.assignedTo.map((empId) =>
@@ -52,65 +58,66 @@ const TaskDetail = () => {
   }, [taskId]);
 
   // Mark admin messages as read when component mounts
-  useEffect(() => {
-    const markAdminMessagesAsRead = async () => {
-      if (!task || !task.remarksChat || task.remarksChat.length === 0) return;
-      
-      const hasUnreadAdminMessages = task.remarksChat.some(
-        (msg) => msg.senderRole === "admin" && !msg.employeeRead
-      );
-      
-      if (hasUnreadAdminMessages) {
-        const updatedChat = task.remarksChat.map((msg) => ({
-          ...msg,
-          employeeRead: msg.senderRole === "admin" ? true : msg.employeeRead || false
-        }));
-        
-        try {
-          await updateDoc(doc(db, "tasks", taskId), {
-            remarksChat: updatedChat,
-          });
-        } catch (error) {
-          console.error("Error marking messages as read:", error);
-        }
-      }
-    };
-    
-    if (task) {
-      markAdminMessagesAsRead();
-    }
-  }, [task, taskId]);
+  // useEffect(() => {
+  //   const markAdminMessagesAsRead = async () => {
+  //     if (!task || !task.remarksChat || task.remarksChat.length === 0) return;
+
+  //     const hasUnreadAdminMessages = task.remarksChat.some(
+  //       (msg) => msg.senderRole === "admin" && !msg.employeeRead
+  //     );
+
+  //     if (hasUnreadAdminMessages) {
+  //       const updatedChat = task.remarksChat.map((msg) => ({
+  //         ...msg,
+  //         employeeRead:
+  //           msg.senderRole === "admin" ? true : msg.employeeRead || false,
+  //       }));
+
+  //       try {
+  //         await updateDoc(doc(db, "tasks", taskId), {
+  //           remarksChat: updatedChat,
+  //         });
+  //       } catch (error) {
+  //         console.error("Error marking messages as read:", error);
+  //       }
+  //     }
+  //   };
+
+  //   if (task) {
+  //     markAdminMessagesAsRead();
+  //   }
+  // }, [task, taskId]);
 
   // Listen to real-time chat updates
-  useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (doc) => {
-      if (doc.exists()) {
-        const taskData = doc.data();
-        setMessages(taskData.remarksChat || []);
-        setTask((prev) => ({ ...prev, ...taskData }));
-      }
-    });
+  // useEffect(() => {
+  //   const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (doc) => {
+  //     if (doc.exists()) {
+  //       const taskData = doc.data();
+  //       setMessages(taskData.remarksChat || []);
+  //       setTask((prev) => ({ ...prev, ...taskData }));
+  //     }
+  //   });
 
-    return unsubscribe;
-  }, [taskId]);
+  //   return unsubscribe;
+  // }, [taskId]);
 
   // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+  // useEffect(() => {
+  //   if (messagesEndRef.current) {
+  //     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [messages]);
 
   // Helper function to get rejection date from status history
   const getRejectionDate = () => {
     if (!task || !task.statusHistory) return null;
-    
+
     const rejections = task.statusHistory.filter(
       (history) => history.status === "rejected"
     );
-    
+
     if (rejections.length === 0) return null;
-    
+
     const latestRejection = rejections[rejections.length - 1];
     return latestRejection.changedAt;
   };
@@ -118,13 +125,13 @@ const TaskDetail = () => {
   // Helper function to get approval date from status history
   const getApprovalDate = () => {
     if (!task || !task.statusHistory) return null;
-    
+
     const approvals = task.statusHistory.filter(
       (history) => history.status === "approved"
     );
-    
+
     if (approvals.length === 0) return null;
-    
+
     const latestApproval = approvals[approvals.length - 1];
     return latestApproval.changedAt;
   };
@@ -141,39 +148,39 @@ const TaskDetail = () => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    
-    if (!message.trim() || task.approved) return;
+  // const handleSendMessage = async (e) => {
+  //   e.preventDefault();
 
-    setSending(true);
+  //   if (!message.trim() || task.approved) return;
 
-    try {
-      // Get user's name from Firestore
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      const userName = userDoc.exists() ? userDoc.data().name : "Employee";
+  //   setSending(true);
 
-      const newMessage = {
-        text: message.trim(),
-        sentBy: userName, // Use actual name from Firestore
-        sentById: currentUser.uid,
-        senderRole: "employee",
-        sentAt: new Date().toISOString(),
-        employeeRead: true, // Employee's own messages are already "read"
-      };
+  //   try {
+  //     // Get user's name from Firestore
+  //     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+  //     const userName = userDoc.exists() ? userDoc.data().name : "Employee";
 
-      await updateDoc(doc(db, "tasks", taskId), {
-        remarksChat: arrayUnion(newMessage),
-      });
+  //     const newMessage = {
+  //       text: message.trim(),
+  //       sentBy: userName, // Use actual name from Firestore
+  //       sentById: currentUser.uid,
+  //       senderRole: "employee",
+  //       sentAt: new Date().toISOString(),
+  //       employeeRead: true, // Employee's own messages are already "read"
+  //     };
 
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message");
-    } finally {
-      setSending(false);
-    }
-  };
+  //     await updateDoc(doc(db, "tasks", taskId), {
+  //       remarksChat: arrayUnion(newMessage),
+  //     });
+
+  //     setMessage("");
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     alert("Failed to send message");
+  //   } finally {
+  //     setSending(false);
+  //   }
+  // };
 
   const handleSave = async () => {
     if (!hasChanges || updating) return;
@@ -312,6 +319,20 @@ const TaskDetail = () => {
               <p className="text-xl font-semibold text-gray-900">{task.name}</p>
             </div>
 
+            {/* Task Details */}
+            {task.details && (
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Task Details
+                </label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {task.details}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Assigned Employees */}
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-2">
@@ -444,7 +465,8 @@ const TaskDetail = () => {
                       />
                     </svg>
                     <p className="text-sm text-red-700">
-                      Rejected on: {new Date(getRejectionDate()).toLocaleString("en-US", {
+                      Rejected on:{" "}
+                      {new Date(getRejectionDate()).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -496,7 +518,8 @@ const TaskDetail = () => {
                       />
                     </svg>
                     <p className="text-sm text-green-700">
-                      Approved on: {new Date(getApprovalDate()).toLocaleString("en-US", {
+                      Approved on:{" "}
+                      {new Date(getApprovalDate()).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -510,9 +533,9 @@ const TaskDetail = () => {
             )}
 
             {/* Chat Section */}
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-              {/* Chat Header */}
-              <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-4">
+            {/* <div className="border-2 border-gray-200 rounded-lg overflow-hidden"> */}
+            {/* Chat Header */}
+            {/* <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-4">
                 <div className="flex items-center space-x-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -538,10 +561,10 @@ const TaskDetail = () => {
                 <p className="text-xs text-gray-100 mt-1">
                   Communicate with admin about this task
                 </p>
-              </div>
+              </div> */}
 
-              {/* Messages Area */}
-              <div className="bg-gray-50 p-4 h-96 overflow-y-auto">
+            {/* Messages Area */}
+            {/* <div className="bg-gray-50 p-4 h-96 overflow-y-auto">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center text-gray-500">
@@ -560,7 +583,9 @@ const TaskDetail = () => {
                         />
                       </svg>
                       <p className="font-medium">No messages yet</p>
-                      <p className="text-sm mt-1">Start a conversation about this task</p>
+                      <p className="text-sm mt-1">
+                        Start a conversation about this task
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -569,7 +594,9 @@ const TaskDetail = () => {
                       <div
                         key={index}
                         className={`flex ${
-                          msg.senderRole === "employee" ? "justify-end" : "justify-start"
+                          msg.senderRole === "employee"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
                         <div
@@ -605,10 +632,10 @@ const TaskDetail = () => {
                     <div ref={messagesEndRef} />
                   </div>
                 )}
-              </div>
+              </div> */}
 
-              {/* Input Area */}
-              <form
+            {/* Input Area */}
+            {/* <form
                 onSubmit={handleSendMessage}
                 className="border-t border-gray-200 p-4 bg-white"
               >
@@ -657,7 +684,7 @@ const TaskDetail = () => {
                   Press Enter to send, Shift+Enter for new line
                 </p>
               </form>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
