@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, getDocs, addDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import Navbar from "../Layout/Navbar";
 
@@ -8,6 +16,7 @@ const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
@@ -42,8 +51,43 @@ const ProjectDetail = () => {
     }
   };
 
+  const fetchEmployeesWithTasks = async () => {
+    try {
+      // Fetch all tasks for this project
+      const tasksQuery = query(
+        collection(db, "tasks"),
+        where("projectId", "==", projectId)
+      );
+      const tasksSnapshot = await getDocs(tasksQuery);
+
+      // Get unique employee IDs from tasks
+      const employeeIds = new Set();
+      tasksSnapshot.docs.forEach((doc) => {
+        const task = doc.data();
+        if (task.assignedTo && Array.isArray(task.assignedTo)) {
+          task.assignedTo.forEach((empId) => employeeIds.add(empId));
+        }
+      });
+
+      // Fetch employee details for those IDs
+      if (employeeIds.size > 0) {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const employeesData = usersSnapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((user) => employeeIds.has(user.id));
+
+        setEmployees(employeesData);
+      } else {
+        setEmployees([]);
+      }
+    } catch (error) {
+      console.error("Error fetching employees with tasks:", error);
+    }
+  };
+
   useEffect(() => {
     fetchProject();
+    fetchEmployeesWithTasks();
   }, [projectId]);
 
   if (loading) {
@@ -114,15 +158,21 @@ const ProjectDetail = () => {
           </button>
         </div>
 
-        {project.employees?.length === 0 ? (
+        {employees.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-500 text-lg">
-              No employees assigned to this project
+            <p className="text-gray-500 text-lg mb-4">
+              No employees assigned tasks in this project yet
             </p>
+            <button
+              onClick={() => setShowCreateTaskModal(true)}
+              className="bg-dimo-blue text-white px-6 py-3 rounded-lg hover:bg-dimo-dark transition duration-200"
+            >
+              Create First Task
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {project.employees?.map((employee) => (
+            {employees.map((employee) => (
               <div
                 key={employee.id}
                 onClick={() =>
@@ -138,11 +188,6 @@ const ProjectDetail = () => {
                       {getInitials(employee.name)}
                     </span>
                   </div>
-                  {/* <div className="w-16 h-16 bg-gradient-to-br from-dimo-blue to-dimo-dark rounded-full flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">
-                      {employee.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div> */}
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-800">
                       {employee.name}
@@ -165,7 +210,11 @@ const ProjectDetail = () => {
       {showCreateTaskModal && (
         <CreateTaskModal
           projectId={projectId}
-          onClose={() => setShowCreateTaskModal(false)}
+          onClose={() => {
+            setShowCreateTaskModal(false);
+            // Refresh employees list after creating a task
+            fetchEmployeesWithTasks();
+          }}
         />
       )}
     </div>
@@ -189,14 +238,19 @@ const CreateTaskModal = ({ projectId, onClose }) => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
 
   useEffect(() => {
-    const fetchProject = async () => {
-      const projectDoc = await getDoc(doc(db, "projects", projectId));
-      if (projectDoc.exists()) {
-        const projectData = projectDoc.data();
-        setAllEmployees(projectData.employees || []);
-      }
+    const fetchAllEmployees = async () => {
+      // Fetch ALL employees from users collection
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const employeesData = usersSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((user) => user.role === "employee"); // Filter only employees
+
+      setAllEmployees(employeesData);
     };
-    fetchProject();
+    fetchAllEmployees();
   }, [projectId]);
 
   const handleSubmit = async (e) => {
@@ -295,7 +349,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
               {allEmployees.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
-                  No employees in this project
+                  No employees available
                 </div>
               ) : (
                 allEmployees.map((emp) => (
@@ -307,7 +361,10 @@ const CreateTaskModal = ({ projectId, onClose }) => {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{emp.name}</span>
+                      <div>
+                        <span className="text-sm font-medium">{emp.name}</span>
+                        <p className="text-xs text-gray-500">{emp.email}</p>
+                      </div>
                       <div
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                           selectedEmployees.includes(emp.id)
@@ -381,300 +438,3 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 };
 
 export default ProjectDetail;
-
-// import { useState, useEffect } from "react";
-// import { useParams, useNavigate } from "react-router-dom";
-// import { doc, getDoc, updateDoc, arrayUnion, collection, getDocs } from "firebase/firestore";
-// import { db } from "../../firebase/config";
-// import Navbar from "../Layout/Navbar";
-
-// const ProjectDetail = () => {
-//   const { projectId } = useParams();
-//   const navigate = useNavigate();
-//   const [project, setProject] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-//   const [allUsers, setAllUsers] = useState([]);
-//   const [selectedEmployees, setSelectedEmployees] = useState([]);
-//   const [addingEmployees, setAddingEmployees] = useState(false);
-
-//   const fetchProject = async () => {
-//     try {
-//       const projectDoc = await getDoc(doc(db, "projects", projectId));
-//       if (projectDoc.exists()) {
-//         setProject({ id: projectDoc.id, ...projectDoc.data() });
-//       }
-//     } catch (error) {
-//       console.error("Error fetching project:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchProject();
-//   }, [projectId]);
-
-//   const fetchAvailableEmployees = async () => {
-//     try {
-//       const usersSnapshot = await getDocs(collection(db, "users"));
-//       const users = usersSnapshot.docs.map((doc) => ({
-//         id: doc.id,
-//         ...doc.data(),
-//       }));
-
-//       // Filter out employees already in the project and non-employees
-//       const availableEmployees = users.filter(
-//         (user) =>
-//           user.role === "employee" &&
-//           !project?.employees?.some((emp) => emp.id === user.id)
-//       );
-
-//       setAllUsers(availableEmployees);
-//     } catch (error) {
-//       console.error("Error fetching users:", error);
-//     }
-//   };
-
-//   const handleOpenModal = () => {
-//     setShowAddEmployeeModal(true);
-//     fetchAvailableEmployees();
-//   };
-
-//   const toggleEmployee = (employee) => {
-//     setSelectedEmployees((prev) => {
-//       const exists = prev.find((emp) => emp.id === employee.id);
-//       if (exists) {
-//         return prev.filter((emp) => emp.id !== employee.id);
-//       } else {
-//         return [...prev, { id: employee.id, name: employee.name, email: employee.email }];
-//       }
-//     });
-//   };
-
-//   const handleAddEmployees = async () => {
-//     if (selectedEmployees.length === 0) return;
-
-//     setAddingEmployees(true);
-//     try {
-//       const projectRef = doc(db, "projects", projectId);
-//       await updateDoc(projectRef, {
-//         employees: arrayUnion(...selectedEmployees),
-//       });
-
-//       // Refresh project data
-//       await fetchProject();
-
-//       // Reset and close modal
-//       setSelectedEmployees([]);
-//       setShowAddEmployeeModal(false);
-//     } catch (error) {
-//       console.error("Error adding employees:", error);
-//       alert("Failed to add employees");
-//     } finally {
-//       setAddingEmployees(false);
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gray-50">
-//         <Navbar />
-//         <div className="flex items-center justify-center h-96">
-//           <div className="text-xl text-gray-600">Loading...</div>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (!project) {
-//     return (
-//       <div className="min-h-screen bg-gray-50">
-//         <Navbar />
-//         <div className="flex items-center justify-center h-96">
-//           <div className="text-xl text-gray-600">Project not found</div>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <Navbar />
-
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-//         {/* Back Button with Icon */}
-//         <button
-//           onClick={() => navigate("/admin")}
-//           className="mb-6 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group"
-//         >
-//           <svg
-//             xmlns="http://www.w3.org/2000/svg"
-//             className="h-6 w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
-//             fill="none"
-//             viewBox="0 0 24 24"
-//             stroke="currentColor"
-//           >
-//             <path
-//               strokeLinecap="round"
-//               strokeLinejoin="round"
-//               strokeWidth={2}
-//               d="M10 19l-7-7m0 0l7-7m-7 7h18"
-//             />
-//           </svg>
-//         </button>
-
-//         {/* Project Header */}
-//         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-//           <h1 className="text-3xl font-bold text-dimo-blue">{project.name}</h1>
-//           <p className="text-gray-600 mt-2">
-//             Created on {new Date(project.createdAt).toLocaleDateString()}
-//           </p>
-//         </div>
-
-//         {/* Employees Section Header with Add Button */}
-//         <div className="flex justify-between items-center mb-6">
-//           <h2 className="text-2xl font-bold text-gray-800">Team Members</h2>
-//           <button
-//             onClick={handleOpenModal}
-//             className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
-//           >
-//             <span className="text-xl">+</span>
-//             <span>Add Employees</span>
-//           </button>
-//         </div>
-
-//         {project.employees?.length === 0 ? (
-//           <div className="bg-white rounded-lg shadow-md p-12 text-center">
-//             <p className="text-gray-500 text-lg mb-4">
-//               No employees assigned to this project
-//             </p>
-//             <button
-//               onClick={handleOpenModal}
-//               className="bg-dimo-blue text-white px-6 py-3 rounded-lg hover:bg-dimo-dark transition duration-200"
-//             >
-//               Add Employees
-//             </button>
-//           </div>
-//         ) : (
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//             {project.employees?.map((employee) => (
-//               <div
-//                 key={employee.id}
-//                 onClick={() =>
-//                   navigate(
-//                     `/admin/project/${projectId}/employee/${employee.id}`
-//                   )
-//                 }
-//                 className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 cursor-pointer p-6"
-//               >
-//                 <div className="flex items-center space-x-4">
-//                   <div className="w-16 h-16 bg-gradient-to-br from-dimo-blue to-dimo-dark rounded-full flex items-center justify-center">
-//                     <span className="text-2xl font-bold text-white">
-//                       {employee.name.charAt(0).toUpperCase()}
-//                     </span>
-//                   </div>
-//                   <div className="flex-1">
-//                     <h3 className="text-lg font-semibold text-gray-800">
-//                       {employee.name}
-//                     </h3>
-//                     <p className="text-sm text-gray-500">{employee.email}</p>
-//                   </div>
-//                 </div>
-//                 <div className="mt-4 pt-4 border-t border-gray-200">
-//                   <span className="text-dimo-blue text-sm font-medium">
-//                     View Tasks →
-//                   </span>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Add Employee Modal */}
-//       {showAddEmployeeModal && (
-//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-//           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-//             <div className="bg-dimo-blue text-white p-6 rounded-t-lg">
-//               <h2 className="text-2xl font-bold">Add Employees to Project</h2>
-//             </div>
-
-//             <div className="p-6">
-//               {allUsers.length === 0 ? (
-//                 <div className="text-center py-8 text-gray-500">
-//                   No available employees to add
-//                 </div>
-//               ) : (
-//                 <>
-//                   <div className="mb-4">
-//                     <p className="text-sm text-gray-600">
-//                       Select employees to add to this project ({selectedEmployees.length} selected)
-//                     </p>
-//                   </div>
-
-//                   <div className="border border-gray-300 rounded-lg max-h-96 overflow-y-auto">
-//                     {allUsers.map((employee) => {
-//                       const isSelected = selectedEmployees.some((emp) => emp.id === employee.id);
-//                       return (
-//                         <div
-//                           key={employee.id}
-//                           onClick={() => toggleEmployee(employee)}
-//                           className={`p-4 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 transition ${
-//                             isSelected ? "bg-blue-50" : ""
-//                           }`}
-//                         >
-//                           <div className="flex items-center justify-between">
-//                             <div>
-//                               <p className="text-sm font-medium text-gray-900">
-//                                 {employee.name}
-//                               </p>
-//                               <p className="text-xs text-gray-500">{employee.email}</p>
-//                             </div>
-//                             <div
-//                               className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${
-//                                 isSelected
-//                                   ? "bg-dimo-blue border-dimo-blue"
-//                                   : "border-gray-300"
-//                               }`}
-//                             >
-//                               {isSelected && (
-//                                 <span className="text-white text-sm">✓</span>
-//                               )}
-//                             </div>
-//                           </div>
-//                         </div>
-//                       );
-//                     })}
-//                   </div>
-//                 </>
-//               )}
-
-//               <div className="flex justify-end space-x-4 mt-6">
-//                 <button
-//                   type="button"
-//                   onClick={() => {
-//                     setShowAddEmployeeModal(false);
-//                     setSelectedEmployees([]);
-//                   }}
-//                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-//                 >
-//                   Cancel
-//                 </button>
-//                 <button
-//                   onClick={handleAddEmployees}
-//                   disabled={addingEmployees || selectedEmployees.length === 0}
-//                   className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-//                 >
-//                   {addingEmployees ? "Adding..." : `Add ${selectedEmployees.length} Employee${selectedEmployees.length !== 1 ? 's' : ''}`}
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default ProjectDetail;

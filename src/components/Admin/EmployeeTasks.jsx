@@ -25,10 +25,10 @@ const EmployeeTasks = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
+  // const [showChatModal, setShowChatModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [rejectingTaskId, setRejectingTaskId] = useState(null);
-  const [chatTask, setChatTask] = useState(null);
+  // const [chatTask, setChatTask] = useState(null);
 
   useEffect(() => {
     // Fetch project details
@@ -97,18 +97,18 @@ const EmployeeTasks = () => {
   };
 
   // Helper function to get latest message from chat
-  const getLatestMessage = (task) => {
-    if (!task.remarksChat || task.remarksChat.length === 0) return null;
-    return task.remarksChat[task.remarksChat.length - 1];
-  };
+  // const getLatestMessage = (task) => {
+  //   if (!task.remarksChat || task.remarksChat.length === 0) return null;
+  //   return task.remarksChat[task.remarksChat.length - 1];
+  // };
 
   // Helper function to count unread messages from employee
-  const getUnreadEmployeeMessages = (task) => {
-    if (!task.remarksChat || task.remarksChat.length === 0) return 0;
-    return task.remarksChat.filter(
-      (msg) => msg.senderRole === "employee" && !msg.adminRead
-    ).length;
-  };
+  // const getUnreadEmployeeMessages = (task) => {
+  //   if (!task.remarksChat || task.remarksChat.length === 0) return 0;
+  //   return task.remarksChat.filter(
+  //     (msg) => msg.senderRole === "employee" && !msg.adminRead
+  //   ).length;
+  // };
 
   const handleApprove = async (taskId) => {
     try {
@@ -132,10 +132,10 @@ const EmployeeTasks = () => {
     setShowRejectModal(true);
   };
 
-  const handleChatClick = (task) => {
-    setChatTask(task);
-    setShowChatModal(true);
-  };
+  // const handleChatClick = (task) => {
+  //   setChatTask(task);
+  //   setShowChatModal(true);
+  // };
 
   const handleDeleteTask = async (taskId, taskName) => {
     const confirmDelete = window.confirm(
@@ -210,7 +210,7 @@ const EmployeeTasks = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasks.map((task) => {
-              const unreadCount = getUnreadEmployeeMessages(task);
+              // const unreadCount = getUnreadEmployeeMessages(task);
 
               return (
                 <div
@@ -238,12 +238,12 @@ const EmployeeTasks = () => {
 
                     {/* Task Details */}
                     {task.details && (
-                      <div className="pt-3 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-600 mb-2">
-                          Details:
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">
+                          Task Details:
                         </p>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
                             {task.details}
                           </p>
                         </div>
@@ -349,7 +349,7 @@ const EmployeeTasks = () => {
                     )}
 
                     {/* Latest Message Preview - Only if messages exist */}
-                    {getLatestMessage(task) && (
+                    {/* {getLatestMessage(task) && (
                       <div
                         className="bg-purple-50 border border-purple-200 rounded-lg p-3 cursor-pointer hover:bg-purple-100 transition"
                         onClick={() => handleChatClick(task)}
@@ -383,7 +383,7 @@ const EmployeeTasks = () => {
                           )}
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Target Date */}
                     <div className="flex items-center justify-between">
@@ -400,7 +400,7 @@ const EmployeeTasks = () => {
                       {/* Actions */}
                       <div className="flex flex-wrap items-center gap-2">
                         {/* Chat Button */}
-                        <button
+                        {/* <button
                           onClick={() => handleChatClick(task)}
                           className="flex items-center space-x-1 text-purple-600 hover:text-purple-800 px-3 py-1.5 rounded hover:bg-purple-50 transition text-sm relative"
                           title="Open chat"
@@ -431,7 +431,7 @@ const EmployeeTasks = () => {
                                 : task.remarksChat.length}
                             </span>
                           )}
-                        </button>
+                        </button> */}
 
                         {/* Edit Button - Always visible */}
                         <button
@@ -542,7 +542,7 @@ const EmployeeTasks = () => {
       )}
 
       {/* Chat Modal */}
-      {showChatModal && chatTask && (
+      {/* {showChatModal && chatTask && (
         <ChatModal
           task={chatTask}
           employeeName={employee?.name}
@@ -551,250 +551,250 @@ const EmployeeTasks = () => {
             setChatTask(null);
           }}
         />
-      )}
+      )} */}
     </div>
   );
 };
 
-const ChatModal = ({ task, employeeName, onClose }) => {
-  const { currentUser } = useAuth();
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [messages, setMessages] = useState(task.remarksChat || []);
-  const messagesEndRef = useRef(null);
+// const ChatModal = ({ task, employeeName, onClose }) => {
+//   const { currentUser } = useAuth();
+//   const [message, setMessage] = useState("");
+//   const [sending, setSending] = useState(false);
+//   const [messages, setMessages] = useState(task.remarksChat || []);
+//   const messagesEndRef = useRef(null);
 
-  // Mark messages as read when chat opens
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      if (!task.remarksChat || task.remarksChat.length === 0) return;
+//   // Mark messages as read when chat opens
+//   useEffect(() => {
+//     const markMessagesAsRead = async () => {
+//       if (!task.remarksChat || task.remarksChat.length === 0) return;
 
-      const hasUnread = task.remarksChat.some(
-        (msg) => msg.senderRole === "employee" && !msg.adminRead
-      );
+//       const hasUnread = task.remarksChat.some(
+//         (msg) => msg.senderRole === "employee" && !msg.adminRead
+//       );
 
-      if (hasUnread) {
-        const updatedChat = task.remarksChat.map((msg) => ({
-          ...msg,
-          adminRead:
-            msg.senderRole === "employee" ? true : msg.adminRead || false,
-        }));
+//       if (hasUnread) {
+//         const updatedChat = task.remarksChat.map((msg) => ({
+//           ...msg,
+//           adminRead:
+//             msg.senderRole === "employee" ? true : msg.adminRead || false,
+//         }));
 
-        try {
-          await updateDoc(doc(db, "tasks", task.id), {
-            remarksChat: updatedChat,
-          });
-        } catch (error) {
-          console.error("Error marking messages as read:", error);
-        }
-      }
-    };
+//         try {
+//           await updateDoc(doc(db, "tasks", task.id), {
+//             remarksChat: updatedChat,
+//           });
+//         } catch (error) {
+//           console.error("Error marking messages as read:", error);
+//         }
+//       }
+//     };
 
-    markMessagesAsRead();
-  }, [task.id, task.remarksChat]);
+//     markMessagesAsRead();
+//   }, [task.id, task.remarksChat]);
 
-  // Listen to real-time updates
-  useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "tasks", task.id), (doc) => {
-      if (doc.exists()) {
-        setMessages(doc.data().remarksChat || []);
-      }
-    });
+//   // Listen to real-time updates
+//   useEffect(() => {
+//     const unsubscribe = onSnapshot(doc(db, "tasks", task.id), (doc) => {
+//       if (doc.exists()) {
+//         setMessages(doc.data().remarksChat || []);
+//       }
+//     });
 
-    return unsubscribe;
-  }, [task.id]);
+//     return unsubscribe;
+//   }, [task.id]);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+//   // Scroll to bottom when messages change
+//   useEffect(() => {
+//     if (messagesEndRef.current) {
+//       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+//     }
+//   }, [messages]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
+//   const handleSendMessage = async (e) => {
+//     e.preventDefault();
 
-    if (!message.trim()) return;
+//     if (!message.trim()) return;
 
-    setSending(true);
+//     setSending(true);
 
-    try {
-      // Get admin's name from Firestore
-      const adminDoc = await getDoc(doc(db, "users", currentUser.uid));
-      const adminName = adminDoc.exists() ? adminDoc.data().name : "Admin";
+//     try {
+//       // Get admin's name from Firestore
+//       const adminDoc = await getDoc(doc(db, "users", currentUser.uid));
+//       const adminName = adminDoc.exists() ? adminDoc.data().name : "Admin";
 
-      const newMessage = {
-        text: message.trim(),
-        sentBy: adminName, // Use actual name from Firestore
-        sentById: currentUser.uid,
-        senderRole: "admin",
-        sentAt: new Date().toISOString(),
-        adminRead: true, // Admin's own messages are already "read"
-      };
+//       const newMessage = {
+//         text: message.trim(),
+//         sentBy: adminName, // Use actual name from Firestore
+//         sentById: currentUser.uid,
+//         senderRole: "admin",
+//         sentAt: new Date().toISOString(),
+//         adminRead: true, // Admin's own messages are already "read"
+//       };
 
-      await updateDoc(doc(db, "tasks", task.id), {
-        remarksChat: arrayUnion(newMessage),
-      });
+//       await updateDoc(doc(db, "tasks", task.id), {
+//         remarksChat: arrayUnion(newMessage),
+//       });
 
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message");
-    } finally {
-      setSending(false);
-    }
-  };
+//       setMessage("");
+//     } catch (error) {
+//       console.error("Error sending message:", error);
+//       alert("Failed to send message");
+//     } finally {
+//       setSending(false);
+//     }
+//   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-3xl w-full h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-6 rounded-t-lg flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Task Chat</h2>
-            <p className="text-sm text-gray-200 mt-1">{task.name}</p>
-            <p className="text-xs text-gray-200 mt-1">
-              Chatting with: {employeeName}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-gray-200 transition"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+//   return (
+//     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+//       <div className="bg-white rounded-lg max-w-3xl w-full h-[80vh] flex flex-col">
+//         {/* Header */}
+//         <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-6 rounded-t-lg flex items-center justify-between">
+//           <div>
+//             <h2 className="text-2xl font-bold">Task Chat</h2>
+//             <p className="text-sm text-gray-200 mt-1">{task.name}</p>
+//             <p className="text-xs text-gray-200 mt-1">
+//               Chatting with: {employeeName}
+//             </p>
+//           </div>
+//           <button
+//             onClick={onClose}
+//             className="text-white hover:text-gray-200 transition"
+//           >
+//             <svg
+//               xmlns="http://www.w3.org/2000/svg"
+//               className="h-6 w-6"
+//               fill="none"
+//               viewBox="0 0 24 24"
+//               stroke="currentColor"
+//             >
+//               <path
+//                 strokeLinecap="round"
+//                 strokeLinejoin="round"
+//                 strokeWidth={2}
+//                 d="M6 18L18 6M6 6l12 12"
+//               />
+//             </svg>
+//           </button>
+//         </div>
 
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-16 w-16 mx-auto mb-4 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-                <p className="text-lg font-medium">No messages yet</p>
-                <p className="text-sm mt-1">
-                  Start a conversation with {employeeName}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.senderRole === "admin" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[70%] rounded-lg p-4 ${
-                      msg.senderRole === "admin"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white border border-gray-200 text-gray-900"
-                    }`}
-                  >
-                    <p className="text-xs font-semibold opacity-75 mb-2">
-                      {msg.sentBy}
-                    </p>
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {msg.text}
-                    </p>
-                    <p
-                      className={`text-xs mt-2 ${
-                        msg.senderRole === "admin"
-                          ? "text-blue-100"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {new Date(msg.sentAt).toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
+//         {/* Messages Area */}
+//         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+//           {messages.length === 0 ? (
+//             <div className="flex items-center justify-center h-full">
+//               <div className="text-center text-gray-500">
+//                 <svg
+//                   xmlns="http://www.w3.org/2000/svg"
+//                   className="h-16 w-16 mx-auto mb-4 text-gray-400"
+//                   fill="none"
+//                   viewBox="0 0 24 24"
+//                   stroke="currentColor"
+//                 >
+//                   <path
+//                     strokeLinecap="round"
+//                     strokeLinejoin="round"
+//                     strokeWidth={2}
+//                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+//                   />
+//                 </svg>
+//                 <p className="text-lg font-medium">No messages yet</p>
+//                 <p className="text-sm mt-1">
+//                   Start a conversation with {employeeName}
+//                 </p>
+//               </div>
+//             </div>
+//           ) : (
+//             <div className="space-y-4">
+//               {messages.map((msg, index) => (
+//                 <div
+//                   key={index}
+//                   className={`flex ${
+//                     msg.senderRole === "admin" ? "justify-end" : "justify-start"
+//                   }`}
+//                 >
+//                   <div
+//                     className={`max-w-[70%] rounded-lg p-4 ${
+//                       msg.senderRole === "admin"
+//                         ? "bg-blue-500 text-white"
+//                         : "bg-white border border-gray-200 text-gray-900"
+//                     }`}
+//                   >
+//                     <p className="text-xs font-semibold opacity-75 mb-2">
+//                       {msg.sentBy}
+//                     </p>
+//                     <p className="text-sm whitespace-pre-wrap break-words">
+//                       {msg.text}
+//                     </p>
+//                     <p
+//                       className={`text-xs mt-2 ${
+//                         msg.senderRole === "admin"
+//                           ? "text-blue-100"
+//                           : "text-gray-500"
+//                       }`}
+//                     >
+//                       {new Date(msg.sentAt).toLocaleString("en-US", {
+//                         month: "short",
+//                         day: "numeric",
+//                         hour: "2-digit",
+//                         minute: "2-digit",
+//                       })}
+//                     </p>
+//                   </div>
+//                 </div>
+//               ))}
+//               <div ref={messagesEndRef} />
+//             </div>
+//           )}
+//         </div>
 
-        {/* Input Area */}
-        <form
-          onSubmit={handleSendMessage}
-          className="border-t border-gray-200 p-4 bg-white rounded-b-lg"
-        >
-          <div className="flex items-center space-x-3">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent outline-none resize-none"
-              rows="2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
-            />
-            <button
-              type="submit"
-              disabled={sending || !message.trim()}
-              className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              <span>Send</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Press Enter to send, Shift+Enter for new line
-          </p>
-        </form>
-      </div>
-    </div>
-  );
-};
+//         {/* Input Area */}
+//         <form
+//           onSubmit={handleSendMessage}
+//           className="border-t border-gray-200 p-4 bg-white rounded-b-lg"
+//         >
+//           <div className="flex items-center space-x-3">
+//             <textarea
+//               value={message}
+//               onChange={(e) => setMessage(e.target.value)}
+//               placeholder="Type your message..."
+//               className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent outline-none resize-none"
+//               rows="2"
+//               onKeyDown={(e) => {
+//                 if (e.key === "Enter" && !e.shiftKey) {
+//                   e.preventDefault();
+//                   handleSendMessage(e);
+//                 }
+//               }}
+//             />
+//             <button
+//               type="submit"
+//               disabled={sending || !message.trim()}
+//               className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+//             >
+//               <span>Send</span>
+//               <svg
+//                 xmlns="http://www.w3.org/2000/svg"
+//                 className="h-5 w-5"
+//                 fill="none"
+//                 viewBox="0 0 24 24"
+//                 stroke="currentColor"
+//               >
+//                 <path
+//                   strokeLinecap="round"
+//                   strokeLinejoin="round"
+//                   strokeWidth={2}
+//                   d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+//                 />
+//               </svg>
+//             </button>
+//           </div>
+//           <p className="text-xs text-gray-500 mt-2">
+//             Press Enter to send, Shift+Enter for new line
+//           </p>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// };
 
 const RejectTaskModal = ({ taskId, onClose }) => {
   const [rejectionReason, setRejectionReason] = useState("");

@@ -22,10 +22,10 @@ const TaskDetail = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [pendingHoldReason, setPendingHoldReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const messagesEndRef = useRef(null);
+  // const [message, setMessage] = useState("");
+  // const [sending, setSending] = useState(false);
+  // const [messages, setMessages] = useState([]);
+  // const messagesEndRef = useRef(null);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -35,7 +35,7 @@ const TaskDetail = () => {
           const taskData = { id: taskDoc.id, ...taskDoc.data() };
           setTask(taskData);
           setPendingStatus(taskData.status);
-          setMessages(taskData.remarksChat || []);
+          // setMessages(taskData.remarksChat || []);
 
           // Fetch employee details
           const employeePromises = taskData.assignedTo.map((empId) =>
@@ -58,55 +58,55 @@ const TaskDetail = () => {
   }, [taskId]);
 
   // Mark admin messages as read when component mounts
-  useEffect(() => {
-    const markAdminMessagesAsRead = async () => {
-      if (!task || !task.remarksChat || task.remarksChat.length === 0) return;
+  // useEffect(() => {
+  //   const markAdminMessagesAsRead = async () => {
+  //     if (!task || !task.remarksChat || task.remarksChat.length === 0) return;
 
-      const hasUnreadAdminMessages = task.remarksChat.some(
-        (msg) => msg.senderRole === "admin" && !msg.employeeRead
-      );
+  //     const hasUnreadAdminMessages = task.remarksChat.some(
+  //       (msg) => msg.senderRole === "admin" && !msg.employeeRead
+  //     );
 
-      if (hasUnreadAdminMessages) {
-        const updatedChat = task.remarksChat.map((msg) => ({
-          ...msg,
-          employeeRead:
-            msg.senderRole === "admin" ? true : msg.employeeRead || false,
-        }));
+  //     if (hasUnreadAdminMessages) {
+  //       const updatedChat = task.remarksChat.map((msg) => ({
+  //         ...msg,
+  //         employeeRead:
+  //           msg.senderRole === "admin" ? true : msg.employeeRead || false,
+  //       }));
 
-        try {
-          await updateDoc(doc(db, "tasks", taskId), {
-            remarksChat: updatedChat,
-          });
-        } catch (error) {
-          console.error("Error marking messages as read:", error);
-        }
-      }
-    };
+  //       try {
+  //         await updateDoc(doc(db, "tasks", taskId), {
+  //           remarksChat: updatedChat,
+  //         });
+  //       } catch (error) {
+  //         console.error("Error marking messages as read:", error);
+  //       }
+  //     }
+  //   };
 
-    if (task) {
-      markAdminMessagesAsRead();
-    }
-  }, [task, taskId]);
+  //   if (task) {
+  //     markAdminMessagesAsRead();
+  //   }
+  // }, [task, taskId]);
 
   // Listen to real-time chat updates
-  useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (doc) => {
-      if (doc.exists()) {
-        const taskData = doc.data();
-        setMessages(taskData.remarksChat || []);
-        setTask((prev) => ({ ...prev, ...taskData }));
-      }
-    });
+  // useEffect(() => {
+  //   const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (doc) => {
+  //     if (doc.exists()) {
+  //       const taskData = doc.data();
+  //       setMessages(taskData.remarksChat || []);
+  //       setTask((prev) => ({ ...prev, ...taskData }));
+  //     }
+  //   });
 
-    return unsubscribe;
-  }, [taskId]);
+  //   return unsubscribe;
+  // }, [taskId]);
 
   // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+  // useEffect(() => {
+  //   if (messagesEndRef.current) {
+  //     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [messages]);
 
   // Helper function to get rejection date from status history
   const getRejectionDate = () => {
@@ -148,39 +148,39 @@ const TaskDetail = () => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
+  // const handleSendMessage = async (e) => {
+  //   e.preventDefault();
 
-    if (!message.trim() || task.approved) return;
+  //   if (!message.trim() || task.approved) return;
 
-    setSending(true);
+  //   setSending(true);
 
-    try {
-      // Get user's name from Firestore
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      const userName = userDoc.exists() ? userDoc.data().name : "Employee";
+  //   try {
+  //     // Get user's name from Firestore
+  //     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+  //     const userName = userDoc.exists() ? userDoc.data().name : "Employee";
 
-      const newMessage = {
-        text: message.trim(),
-        sentBy: userName, // Use actual name from Firestore
-        sentById: currentUser.uid,
-        senderRole: "employee",
-        sentAt: new Date().toISOString(),
-        employeeRead: true, // Employee's own messages are already "read"
-      };
+  //     const newMessage = {
+  //       text: message.trim(),
+  //       sentBy: userName, // Use actual name from Firestore
+  //       sentById: currentUser.uid,
+  //       senderRole: "employee",
+  //       sentAt: new Date().toISOString(),
+  //       employeeRead: true, // Employee's own messages are already "read"
+  //     };
 
-      await updateDoc(doc(db, "tasks", taskId), {
-        remarksChat: arrayUnion(newMessage),
-      });
+  //     await updateDoc(doc(db, "tasks", taskId), {
+  //       remarksChat: arrayUnion(newMessage),
+  //     });
 
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message");
-    } finally {
-      setSending(false);
-    }
-  };
+  //     setMessage("");
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     alert("Failed to send message");
+  //   } finally {
+  //     setSending(false);
+  //   }
+  // };
 
   const handleSave = async () => {
     if (!hasChanges || updating) return;
@@ -533,9 +533,9 @@ const TaskDetail = () => {
             )}
 
             {/* Chat Section */}
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-              {/* Chat Header */}
-              <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-4">
+            {/* <div className="border-2 border-gray-200 rounded-lg overflow-hidden"> */}
+            {/* Chat Header */}
+            {/* <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-4">
                 <div className="flex items-center space-x-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -561,10 +561,10 @@ const TaskDetail = () => {
                 <p className="text-xs text-gray-100 mt-1">
                   Communicate with admin about this task
                 </p>
-              </div>
+              </div> */}
 
-              {/* Messages Area */}
-              <div className="bg-gray-50 p-4 h-96 overflow-y-auto">
+            {/* Messages Area */}
+            {/* <div className="bg-gray-50 p-4 h-96 overflow-y-auto">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center text-gray-500">
@@ -632,10 +632,10 @@ const TaskDetail = () => {
                     <div ref={messagesEndRef} />
                   </div>
                 )}
-              </div>
+              </div> */}
 
-              {/* Input Area */}
-              <form
+            {/* Input Area */}
+            {/* <form
                 onSubmit={handleSendMessage}
                 className="border-t border-gray-200 p-4 bg-white"
               >
@@ -684,7 +684,7 @@ const TaskDetail = () => {
                   Press Enter to send, Shift+Enter for new line
                 </p>
               </form>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

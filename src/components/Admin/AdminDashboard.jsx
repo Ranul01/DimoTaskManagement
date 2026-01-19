@@ -15,7 +15,14 @@ import {
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
 
 const AdminDashboard = () => {
   const [projects, setProjects] = useState([]);
@@ -89,7 +96,10 @@ const AdminDashboard = () => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setOpenMenuId(null);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     };
@@ -106,49 +116,62 @@ const AdminDashboard = () => {
 
     return {
       total: employeeTasks.length,
-      notStarted: employeeTasks.filter((t) => t.status === "not-started").length,
-      inProgress: employeeTasks.filter((t) => t.status === "in-progress").length,
-      completed: employeeTasks.filter((t) => t.status === "complete" && t.approved).length,
+      notStarted: employeeTasks.filter((t) => t.status === "not-started")
+        .length,
+      inProgress: employeeTasks.filter((t) => t.status === "in-progress")
+        .length,
+      completed: employeeTasks.filter(
+        (t) => t.status === "complete" && t.approved
+      ).length,
       hold: employeeTasks.filter((t) => t.status === "hold").length,
-      pending: employeeTasks.filter((t) => t.status === "complete" && !t.approved).length,
+      pending: employeeTasks.filter(
+        (t) => t.status === "complete" && !t.approved
+      ).length,
     };
   };
 
   // Get tasks with unread messages
   const getTasksWithUnreadMessages = () => {
-    return allTasks.filter((task) => {
-      if (!task.remarksChat || task.remarksChat.length === 0) return false;
-      
-      // Check if there are any unread messages from employees
-      return task.remarksChat.some(
-        (msg) => msg.senderRole === "employee" && !msg.adminRead
-      );
-    }).map((task) => {
-      const unreadCount = task.remarksChat.filter(
-        (msg) => msg.senderRole === "employee" && !msg.adminRead
-      ).length;
-      
-      const latestUnreadMsg = task.remarksChat
-        .filter((msg) => msg.senderRole === "employee" && !msg.adminRead)
-        .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt))[0];
+    return allTasks
+      .filter((task) => {
+        if (!task.remarksChat || task.remarksChat.length === 0) return false;
 
-      return {
-        ...task,
-        unreadCount,
-        latestUnreadMsg,
-      };
-    }).sort((a, b) => new Date(b.latestUnreadMsg.sentAt) - new Date(a.latestUnreadMsg.sentAt));
+        // Check if there are any unread messages from employees
+        return task.remarksChat.some(
+          (msg) => msg.senderRole === "employee" && !msg.adminRead
+        );
+      })
+      .map((task) => {
+        const unreadCount = task.remarksChat.filter(
+          (msg) => msg.senderRole === "employee" && !msg.adminRead
+        ).length;
+
+        const latestUnreadMsg = task.remarksChat
+          .filter((msg) => msg.senderRole === "employee" && !msg.adminRead)
+          .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt))[0];
+
+        return {
+          ...task,
+          unreadCount,
+          latestUnreadMsg,
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.latestUnreadMsg.sentAt) -
+          new Date(a.latestUnreadMsg.sentAt)
+      );
   };
 
   // Get total unread message count
   const getTotalUnreadCount = () => {
     return allTasks.reduce((total, task) => {
       if (!task.remarksChat) return total;
-      
+
       const unreadInTask = task.remarksChat.filter(
         (msg) => msg.senderRole === "employee" && !msg.adminRead
       ).length;
-      
+
       return total + unreadInTask;
     }, 0);
   };
@@ -198,7 +221,7 @@ const AdminDashboard = () => {
           where("projectId", "==", projectId)
         );
         const tasksSnapshot = await getDocs(tasksQuery);
-        
+
         // Delete all tasks in parallel
         const deleteTaskPromises = tasksSnapshot.docs.map((taskDoc) =>
           deleteDoc(doc(db, "tasks", taskDoc.id))
@@ -237,7 +260,7 @@ const AdminDashboard = () => {
                 Manage your projects and tasks efficiently
               </p>
             </div>
-            
+
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
               <button
@@ -258,7 +281,7 @@ const AdminDashboard = () => {
                     d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                   />
                 </svg>
-                
+
                 {/* Notification Badge */}
                 {totalUnread > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
@@ -310,7 +333,8 @@ const AdminDashboard = () => {
                               {/* Employee Avatar */}
                               <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-semibold text-sm">
-                                  {employee?.name?.charAt(0).toUpperCase() || "?"}
+                                  {employee?.name?.charAt(0).toUpperCase() ||
+                                    "?"}
                                 </span>
                               </div>
 
@@ -331,7 +355,9 @@ const AdminDashboard = () => {
                                   {task.latestUnreadMsg.text}
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1">
-                                  {new Date(task.latestUnreadMsg.sentAt).toLocaleString("en-US", {
+                                  {new Date(
+                                    task.latestUnreadMsg.sentAt
+                                  ).toLocaleString("en-US", {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",
@@ -567,7 +593,7 @@ const ProjectsView = ({
                   {project.name}
                 </h3>
               </div>
-              <div className="p-6">
+              {/* <div className="p-6">
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>{project.employees?.length || 0} Employees</span>
                   <span className="text-dimo-blue font-medium">
@@ -577,7 +603,7 @@ const ProjectsView = ({
                 <p className="text-xs text-gray-400 mt-4">
                   Created: {new Date(project.createdAt).toLocaleDateString()}
                 </p>
-              </div>
+              </div> */}
             </div>
           ))}
         </div>
@@ -699,8 +725,16 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
   };
 
   const chartData = [
-    { name: "Not Started", value: summary.notStarted, color: COLORS.notStarted },
-    { name: "In Progress", value: summary.inProgress, color: COLORS.inProgress },
+    {
+      name: "Not Started",
+      value: summary.notStarted,
+      color: COLORS.notStarted,
+    },
+    {
+      name: "In Progress",
+      value: summary.inProgress,
+      color: COLORS.inProgress,
+    },
     { name: "Completed", value: summary.completed, color: COLORS.completed },
     { name: "Pending", value: summary.pending, color: COLORS.pending },
     { name: "On Hold", value: summary.hold, color: COLORS.hold },
@@ -925,24 +959,7 @@ const EditProjectModal = ({ project, onClose }) => {
 
 const CreateProjectModal = ({ onClose }) => {
   const [projectName, setProjectName] = useState("");
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const q = query(collection(db, "users"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const employeesData = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((user) => user.role === "employee");
-      setEmployees(employeesData);
-    });
-
-    return unsubscribe;
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -951,7 +968,7 @@ const CreateProjectModal = ({ onClose }) => {
     try {
       await addDoc(collection(db, "projects"), {
         name: projectName,
-        employees: selectedEmployees,
+        employees: [], // Start with empty employees array
         createdAt: new Date().toISOString(),
       });
       onClose();
@@ -963,23 +980,9 @@ const CreateProjectModal = ({ onClose }) => {
     }
   };
 
-  const toggleEmployee = (employee) => {
-    setSelectedEmployees((prev) => {
-      const exists = prev.find((e) => e.id === employee.id);
-      if (exists) {
-        return prev.filter((e) => e.id !== employee.id);
-      } else {
-        return [
-          ...prev,
-          { id: employee.id, name: employee.name, email: employee.email },
-        ];
-      }
-    });
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-md w-full">
         <div className="bg-dimo-blue text-white p-6 rounded-t-lg">
           <h2 className="text-2xl font-bold">Create New Project</h2>
         </div>
@@ -999,53 +1002,6 @@ const CreateProjectModal = ({ onClose }) => {
             />
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Select Employees ({selectedEmployees.length} selected)
-            </label>
-            <div className="border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
-              {employees.length === 0 ? (
-                <p className="p-4 text-gray-500 text-center">
-                  No employees available
-                </p>
-              ) : (
-                employees.map((employee) => (
-                  <div
-                    key={employee.id}
-                    onClick={() => toggleEmployee(employee)}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 transition ${
-                      selectedEmployees.find((e) => e.id === employee.id)
-                        ? "bg-blue-50"
-                        : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          {employee.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {employee.email}
-                        </p>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedEmployees.find((e) => e.id === employee.id)
-                            ? "bg-dimo-blue border-dimo-blue"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {selectedEmployees.find(
-                          (e) => e.id === employee.id
-                        ) && <span className="text-white text-xs">✓</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
           <div className="flex justify-end space-x-4">
             <button
               type="button"
@@ -1056,9 +1012,7 @@ const CreateProjectModal = ({ onClose }) => {
             </button>
             <button
               type="submit"
-              disabled={
-                loading || !projectName || selectedEmployees.length === 0
-              }
+              disabled={loading || !projectName}
               className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Project"}
@@ -1069,5 +1023,152 @@ const CreateProjectModal = ({ onClose }) => {
     </div>
   );
 };
+
+// const CreateProjectModal = ({ onClose }) => {
+//   const [projectName, setProjectName] = useState("");
+//   const [employees, setEmployees] = useState([]);
+//   const [selectedEmployees, setSelectedEmployees] = useState([]);
+//   const [loading, setLoading] = useState(false);
+
+//   useEffect(() => {
+//     const q = query(collection(db, "users"));
+//     const unsubscribe = onSnapshot(q, (snapshot) => {
+//       const employeesData = snapshot.docs
+//         .map((doc) => ({
+//           id: doc.id,
+//           ...doc.data(),
+//         }))
+//         .filter((user) => user.role === "employee");
+//       setEmployees(employeesData);
+//     });
+
+//     return unsubscribe;
+//   }, []);
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+
+//     try {
+//       await addDoc(collection(db, "projects"), {
+//         name: projectName,
+//         employees: selectedEmployees,
+//         createdAt: new Date().toISOString(),
+//       });
+//       onClose();
+//     } catch (error) {
+//       console.error("Error creating project:", error);
+//       alert("Failed to create project");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const toggleEmployee = (employee) => {
+//     setSelectedEmployees((prev) => {
+//       const exists = prev.find((e) => e.id === employee.id);
+//       if (exists) {
+//         return prev.filter((e) => e.id !== employee.id);
+//       } else {
+//         return [
+//           ...prev,
+//           { id: employee.id, name: employee.name, email: employee.email },
+//         ];
+//       }
+//     });
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+//       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+//         <div className="bg-dimo-blue text-white p-6 rounded-t-lg">
+//           <h2 className="text-2xl font-bold">Create New Project</h2>
+//         </div>
+
+//         <form onSubmit={handleSubmit} className="p-6">
+//           <div className="mb-6">
+//             <label className="block text-sm font-medium text-gray-700 mb-2">
+//               Project Name
+//             </label>
+//             <input
+//               type="text"
+//               value={projectName}
+//               onChange={(e) => setProjectName(e.target.value)}
+//               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
+//               placeholder="Enter project name"
+//               required
+//             />
+//           </div>
+
+//           <div className="mb-6">
+//             <label className="block text-sm font-medium text-gray-700 mb-3">
+//               Select Employees ({selectedEmployees.length} selected)
+//             </label>
+//             <div className="border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
+//               {employees.length === 0 ? (
+//                 <p className="p-4 text-gray-500 text-center">
+//                   No employees available
+//                 </p>
+//               ) : (
+//                 employees.map((employee) => (
+//                   <div
+//                     key={employee.id}
+//                     onClick={() => toggleEmployee(employee)}
+//                     className={`p-4 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 transition ${
+//                       selectedEmployees.find((e) => e.id === employee.id)
+//                         ? "bg-blue-50"
+//                         : ""
+//                     }`}
+//                   >
+//                     <div className="flex items-center justify-between">
+//                       <div>
+//                         <p className="font-medium text-gray-800">
+//                           {employee.name}
+//                         </p>
+//                         <p className="text-sm text-gray-500">
+//                           {employee.email}
+//                         </p>
+//                       </div>
+//                       <div
+//                         className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+//                           selectedEmployees.find((e) => e.id === employee.id)
+//                             ? "bg-dimo-blue border-dimo-blue"
+//                             : "border-gray-300"
+//                         }`}
+//                       >
+//                         {selectedEmployees.find(
+//                           (e) => e.id === employee.id
+//                         ) && <span className="text-white text-xs">✓</span>}
+//                       </div>
+//                     </div>
+//                   </div>
+//                 ))
+//               )}
+//             </div>
+//           </div>
+
+//           <div className="flex justify-end space-x-4">
+//             <button
+//               type="button"
+//               onClick={onClose}
+//               className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+//             >
+//               Cancel
+//             </button>
+//             <button
+//               type="submit"
+//               disabled={
+//                 loading || !projectName || selectedEmployees.length === 0
+//               }
+//               className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
+//             >
+//               {loading ? "Creating..." : "Create Project"}
+//             </button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// };
 
 export default AdminDashboard;
