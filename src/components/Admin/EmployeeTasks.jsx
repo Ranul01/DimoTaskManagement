@@ -263,9 +263,9 @@ const EmployeeTasks = () => {
                     {/* Task Details */}
                     {task.details && (
                       <div className="mt-4">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">
+                        <span className="text-sm font-medium text-gray-600">
                           Task Details:
-                        </p>
+                        </span>
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
                             {task.details}
