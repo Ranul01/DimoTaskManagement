@@ -24,35 +24,37 @@ const EmployeeDashboard = () => {
     };
     getUserName();
 
-    // Listen to all projects
-    const projectsQuery = query(collection(db, "projects"));
-    const unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
-      const projectsData = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((project) =>
-          project.employees?.some((emp) => emp.id === currentUser.uid)
-        );
-      setProjects(projectsData);
-    });
-
-    // Listen to all tasks assigned to this employee
+    // Listen to all tasks assigned to this employee FIRST
     const tasksQuery = query(
       collection(db, "tasks"),
       where("assignedTo", "array-contains", currentUser.uid)
     );
-    const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
-      const tasksData = snapshot.docs.map((doc) => ({
+    const unsubscribeTasks = onSnapshot(tasksQuery, (tasksSnapshot) => {
+      const tasksData = tasksSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setAllTasks(tasksData);
+
+      // Get unique project IDs from tasks
+      const projectIds = [...new Set(tasksData.map(task => task.projectId))];
+
+      // Listen to projects that have tasks assigned to this employee
+      const projectsQuery = query(collection(db, "projects"));
+      const unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
+        const projectsData = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter((project) => projectIds.includes(project.id));
+        setProjects(projectsData);
+      });
+
+      return unsubscribeProjects;
     });
 
     return () => {
-      unsubscribeProjects();
       unsubscribeTasks();
     };
   }, [currentUser]);
