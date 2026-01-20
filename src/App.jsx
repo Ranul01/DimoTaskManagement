@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Auth/Login";
 import Register from "./components/Auth/Register";
+import ForgotPassword from "./components/Auth/ForgotPassword";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import ProjectDetail from "./components/Admin/ProjectDetail";
 import EmployeeTasks from "./components/Admin/EmployeeTasks";
@@ -44,6 +45,10 @@ const AppRoutes = () => {
             <Navigate to={userRole === "admin" ? "/admin" : "/employee"} replace />
           )
         }
+      />
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
       />
 
       {/* Admin Routes */}
