@@ -31,14 +31,17 @@ const EmployeeTasks = () => {
 
   useEffect(() => {
     // Listen to project details in real-time
-    const unsubscribeProject = onSnapshot(doc(db, "projects", projectId), (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        const projectData = { id: docSnapshot.id, ...docSnapshot.data() };
-        setProject(projectData);
-        console.log("Project data loaded:", projectData);
-        console.log("Project areas:", projectData.areas);
-      }
-    });
+    const unsubscribeProject = onSnapshot(
+      doc(db, "projects", projectId),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const projectData = { id: docSnapshot.id, ...docSnapshot.data() };
+          setProject(projectData);
+          console.log("Project data loaded:", projectData);
+          console.log("Project areas:", projectData.areas);
+        }
+      },
+    );
 
     // Fetch employee details
     const fetchEmployee = async () => {
@@ -54,7 +57,7 @@ const EmployeeTasks = () => {
     const q = query(
       collection(db, "tasks"),
       where("projectId", "==", projectId),
-      where("assignedTo", "array-contains", employeeId)
+      where("assignedTo", "array-contains", employeeId),
     );
 
     const unsubscribeTasks = onSnapshot(q, (snapshot) => {
@@ -76,7 +79,7 @@ const EmployeeTasks = () => {
     if (!task.statusHistory) return null;
 
     const rejections = task.statusHistory.filter(
-      (history) => history.status === "rejected"
+      (history) => history.status === "rejected",
     );
 
     if (rejections.length === 0) return null;
@@ -90,7 +93,7 @@ const EmployeeTasks = () => {
     if (!task.statusHistory) return null;
 
     const approvals = task.statusHistory.filter(
-      (history) => history.status === "approved"
+      (history) => history.status === "approved",
     );
 
     if (approvals.length === 0) return null;
@@ -101,13 +104,19 @@ const EmployeeTasks = () => {
 
   // Helper function to get area names
   const getAreaNames = (areaIds) => {
-    if (!areaIds || !Array.isArray(areaIds) || areaIds.length === 0 || !project?.areas) return [];
+    if (
+      !areaIds ||
+      !Array.isArray(areaIds) ||
+      areaIds.length === 0 ||
+      !project?.areas
+    )
+      return [];
     return areaIds
-      .map(areaId => {
-        const area = project.areas.find(a => a.id === areaId);
+      .map((areaId) => {
+        const area = project.areas.find((a) => a.id === areaId);
         return area?.name;
       })
-      .filter(name => name); // Remove undefined values
+      .filter((name) => name); // Remove undefined values
   };
 
   const handleApprove = async (taskId) => {
@@ -134,7 +143,7 @@ const EmployeeTasks = () => {
 
   const handleDeleteTask = async (taskId, taskName) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete the task "${taskName}"? This action cannot be undone.`
+      `Are you sure you want to delete the task "${taskName}"? This action cannot be undone.`,
     );
 
     if (confirmDelete) {
@@ -220,7 +229,10 @@ const EmployeeTasks = () => {
                     {areaNames.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {areaNames.map((areaName, index) => (
-                          <div key={index} className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1">
+                          <div
+                            key={index}
+                            className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-3 w-3 text-blue-100"
@@ -241,7 +253,9 @@ const EmployeeTasks = () => {
                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                               />
                             </svg>
-                            <span className="text-xs text-white font-medium">{areaName}</span>
+                            <span className="text-xs text-white font-medium">
+                              {areaName}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -409,6 +423,29 @@ const EmployeeTasks = () => {
                           <span>Edit</span>
                         </button>
 
+                        {/* Delete button - Now available for all tasks */}
+                        <button
+                          onClick={() => handleDeleteTask(task.id, task.name)}
+                          className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 rounded hover:bg-red-50 transition text-sm"
+                          title="Delete task"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          <span>Delete</span>
+                        </button>
+
                         {/* Approve/Reject buttons */}
                         {task.status === "complete" && !task.approved && (
                           <>
@@ -428,7 +465,7 @@ const EmployeeTasks = () => {
                         )}
 
                         {/* Delete button */}
-                        {task.approved && (
+                        {/* {task.approved && (
                           <button
                             onClick={() => handleDeleteTask(task.id, task.name)}
                             className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 rounded hover:bg-red-50 transition text-sm"
@@ -450,7 +487,7 @@ const EmployeeTasks = () => {
                             </svg>
                             <span>Delete</span>
                           </button>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </div>
@@ -596,7 +633,7 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [allEmployees, setAllEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState(
-    task.assignedTo || []
+    task.assignedTo || [],
   );
   const [selectedAreas, setSelectedAreas] = useState(task.areaIds || []);
 
@@ -782,7 +819,8 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
                   No areas available for this project.
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Add areas from the Project Details page (Three-dot menu → Area wise)
+                  Add areas from the Project Details page (Three-dot menu → Area
+                  wise)
                 </p>
               </div>
             )}
@@ -879,7 +917,11 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || selectedEmployees.length === 0 || selectedAreas.length === 0}
+              disabled={
+                loading ||
+                selectedEmployees.length === 0 ||
+                selectedAreas.length === 0
+              }
               className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
             >
               {loading ? "Updating..." : "Update Task"}
@@ -891,7 +933,13 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
   );
 };
 
-const CreateTaskModal = ({ projectId, employeeId, employeeName, projectAreas, onClose }) => {
+const CreateTaskModal = ({
+  projectId,
+  employeeId,
+  employeeName,
+  projectAreas,
+  onClose,
+}) => {
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -935,12 +983,12 @@ const CreateTaskModal = ({ projectId, employeeId, employeeName, projectAreas, on
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (selectedAreas.length === 0) {
       alert("Please select at least one area");
       return;
     }
-    
+
     setLoading(true);
 
     try {
@@ -1099,7 +1147,8 @@ const CreateTaskModal = ({ projectId, employeeId, employeeName, projectAreas, on
                   No areas available for this project.
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Add areas from the Project Details page (Three-dot menu → Area wise)
+                  Add areas from the Project Details page (Three-dot menu → Area
+                  wise)
                 </p>
               </div>
             )}
@@ -1196,7 +1245,11 @@ const CreateTaskModal = ({ projectId, employeeId, employeeName, projectAreas, on
             </button>
             <button
               type="submit"
-              disabled={loading || selectedEmployees.length === 0 || selectedAreas.length === 0}
+              disabled={
+                loading ||
+                selectedEmployees.length === 0 ||
+                selectedAreas.length === 0
+              }
               className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Task"}
