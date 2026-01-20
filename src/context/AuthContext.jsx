@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/config";
@@ -89,12 +90,23 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
+  const resetPassword = async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (error) {
+      console.error("Password reset error:", error);
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
     userRole,
     login,
     register,
     logout,
+    resetPassword,
   };
 
   if (loading) {
