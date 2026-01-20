@@ -38,11 +38,11 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo - responsive sizing */}
           <div className="flex items-center">
-            <img 
+            {/* <img 
               src={dimoLogo} 
               alt="DIMO Logo" 
               className="h-5 sm:h-4 md:h-4 "
-            />
+            /> */}
           </div>
 
           {/* User info and logout - responsive layout */}

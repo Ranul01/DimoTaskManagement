@@ -235,9 +235,9 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-white/90 text-xs mt-6">
-          © 2026 DIMO Sri Lanka. All rights reserved.
-        </p>
+        {/* <p className="text-center text-white/90 text-xs mt-6">
+          © 2026. All rights reserved.
+        </p> */}
       </div>
     </div>
   );
