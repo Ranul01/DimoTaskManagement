@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   doc,
@@ -8,33 +8,34 @@ import {
   addDoc,
   query,
   where,
+  updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
+import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
 
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
   const [project, setProject] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [showAreaModal, setShowAreaModal] = useState(false);
+  const [showUserWiseModal, setShowUserWiseModal] = useState(false);
+  const projectMenuRef = useRef(null);
 
-  // Helper function to get initials from name
   const getInitials = (name) => {
     if (!name) return "?";
-
     const names = name.trim().split(" ");
-
     if (names.length === 1) {
-      // If single name, return first letter
       return names[0].charAt(0).toUpperCase();
     }
-
-    // Return first letter of first name and first letter of last name
     const firstInitial = names[0].charAt(0).toUpperCase();
     const lastInitial = names[names.length - 1].charAt(0).toUpperCase();
-
     return firstInitial + lastInitial;
   };
 
@@ -53,14 +54,12 @@ const ProjectDetail = () => {
 
   const fetchEmployeesWithTasks = async () => {
     try {
-      // Fetch all tasks for this project
       const tasksQuery = query(
         collection(db, "tasks"),
         where("projectId", "==", projectId)
       );
       const tasksSnapshot = await getDocs(tasksQuery);
 
-      // Get unique employee IDs from tasks
       const employeeIds = new Set();
       tasksSnapshot.docs.forEach((doc) => {
         const task = doc.data();
@@ -69,7 +68,6 @@ const ProjectDetail = () => {
         }
       });
 
-      // Fetch employee details for those IDs
       if (employeeIds.size > 0) {
         const usersSnapshot = await getDocs(collection(db, "users"));
         const employeesData = usersSnapshot.docs
@@ -89,6 +87,36 @@ const ProjectDetail = () => {
     fetchProject();
     fetchEmployeesWithTasks();
   }, [projectId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (projectMenuRef.current && !projectMenuRef.current.contains(event.target)) {
+        setShowProjectMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const handleProjectMenuToggle = (e) => {
+    e.stopPropagation();
+    setShowProjectMenu(prev => !prev);
+  };
+
+  const handleAreaWiseClick = () => {
+    setShowProjectMenu(false);
+    setShowAreaModal(true);
+  };
+
+  const handleUserWiseClick = () => {
+    setShowProjectMenu(false);
+    setShowUserWiseModal(true);
+  };
 
   if (loading) {
     return (
@@ -117,7 +145,6 @@ const ProjectDetail = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button with Icon */}
         <button
           onClick={() => navigate("/admin")}
           className="mb-6 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group"
@@ -138,15 +165,88 @@ const ProjectDetail = () => {
           </svg>
         </button>
 
-        {/* Project Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-3xl font-bold text-dimo-blue">{project.name}</h1>
-          <p className="text-gray-600 mt-2">
-            Created on {new Date(project.createdAt).toLocaleDateString()}
-          </p>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8 relative">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-dimo-blue">{project.name}</h1>
+              <p className="text-gray-600 mt-2">
+                Created on {new Date(project.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className="relative" ref={projectMenuRef}>
+              <button
+                onClick={handleProjectMenuToggle}
+                className="bg-gray-100 text-gray-600 p-2 rounded-full hover:bg-gray-200 active:bg-gray-300 transition duration-200 touch-manipulation"
+                title="Options"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                  />
+                </svg>
+              </button>
+
+              {showProjectMenu && (
+                <div
+                  className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-30"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={handleAreaWiseClick}
+                    className="w-full text-left px-4 py-3 text-base text-gray-700 hover:bg-gray-100 active:bg-gray-200 flex items-center space-x-3 touch-manipulation"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                      />
+                    </svg>
+                    <span>Area wise</span>
+                  </button>
+                  <button
+                    onClick={handleUserWiseClick}
+                    className="w-full text-left px-4 py-3 text-base text-gray-700 hover:bg-gray-100 active:bg-gray-200 flex items-center space-x-3 touch-manipulation"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                      />
+                    </svg>
+                    <span>User wise</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Employees Section Header with Add Task Button */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Team Members</h2>
           <button
@@ -206,22 +306,930 @@ const ProjectDetail = () => {
         )}
       </div>
 
-      {/* Create Task Modal */}
       {showCreateTaskModal && (
         <CreateTaskModal
           projectId={projectId}
+          project={project}
           onClose={() => {
             setShowCreateTaskModal(false);
-            // Refresh employees list after creating a task
             fetchEmployeesWithTasks();
           }}
+        />
+      )}
+
+      {showAreaModal && (
+        <AreaManagementModal
+          projectId={projectId}
+          project={project}
+          onClose={() => setShowAreaModal(false)}
+          onUpdate={fetchProject}
+        />
+      )}
+
+      {showUserWiseModal && (
+        <UserWiseModal
+          projectId={projectId}
+          employees={employees}
+          onClose={() => setShowUserWiseModal(false)}
         />
       )}
     </div>
   );
 };
 
-const CreateTaskModal = ({ projectId, onClose }) => {
+// Area Management Modal with Swipeable Cards
+const AreaManagementModal = ({ projectId, project, onClose, onUpdate }) => {
+  const navigate = useNavigate();
+  const [areas, setAreas] = useState(project?.areas || []);
+  const [showAddArea, setShowAddArea] = useState(false);
+  const [newAreaName, setNewAreaName] = useState("");
+  const [editingArea, setEditingArea] = useState(null);
+  const [editAreaName, setEditAreaName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [employees, setEmployees] = useState({});
+  const scrollContainerRef = useRef(null);
+  const menuRefs = useRef({});
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openMenuId !== null) {
+        const menuContainer = menuRefs.current[openMenuId];
+        if (menuContainer && !menuContainer.contains(event.target)) {
+          setOpenMenuId(null);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [openMenuId]);
+
+  useEffect(() => {
+    const fetchTasksAndEmployees = async () => {
+      try {
+        const tasksQuery = query(
+          collection(db, "tasks"),
+          where("projectId", "==", projectId)
+        );
+        const tasksSnapshot = await getDocs(tasksQuery);
+        const tasksData = tasksSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTasks(tasksData);
+
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const employeesMap = {};
+        usersSnapshot.docs.forEach((doc) => {
+          const userData = doc.data();
+          if (userData.role === "employee") {
+            employeesMap[doc.id] = userData;
+          }
+        });
+        setEmployees(employeesMap);
+      } catch (error) {
+        console.error("Error fetching tasks and employees:", error);
+      }
+    };
+
+    fetchTasksAndEmployees();
+  }, [projectId]);
+
+  const getTasksForArea = (areaId) => {
+    return tasks.filter((task) => 
+      task.areaIds && Array.isArray(task.areaIds) && task.areaIds.includes(areaId)
+    );
+  };
+
+  const getStatusInfo = (status, approved) => {
+    if (approved) {
+      return { color: "bg-green-500", label: "Approved" };
+    }
+    switch (status) {
+      case "complete":
+        return { color: "bg-blue-500", label: "Complete" };
+      case "in-progress":
+        return { color: "bg-yellow-500", label: "In Progress" };
+      case "hold":
+        return { color: "bg-orange-500", label: "On Hold" };
+      case "not-started":
+      default:
+        return { color: "bg-gray-400", label: "Not Started" };
+    }
+  };
+
+  const getEmployeeName = (employeeId) => {
+    return employees[employeeId]?.name || "Unknown";
+  };
+
+  const handleTaskClick = (e, taskId) => {
+    e.stopPropagation();
+    // Find the task to get assigned employees
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.assignedTo && task.assignedTo.length > 0) {
+      // Navigate to the first assigned employee's tasks page
+      const firstEmployeeId = task.assignedTo[0];
+      navigate(`/admin/project/${projectId}/employee/${firstEmployeeId}`);
+    }
+  };
+
+  const handleAddArea = async () => {
+    if (!newAreaName.trim()) return;
+
+    setLoading(true);
+    try {
+      const updatedAreas = [...areas, { id: Date.now().toString(), name: newAreaName }];
+      await updateDoc(doc(db, "projects", projectId), {
+        areas: updatedAreas,
+      });
+      setAreas(updatedAreas);
+      setNewAreaName("");
+      setShowAddArea(false);
+      onUpdate();
+    } catch (error) {
+      console.error("Error adding area:", error);
+      alert("Failed to add area");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditArea = async (areaId) => {
+    if (!editAreaName.trim()) return;
+
+    setLoading(true);
+    try {
+      const updatedAreas = areas.map((area) =>
+        area.id === areaId ? { ...area, name: editAreaName } : area
+      );
+      await updateDoc(doc(db, "projects", projectId), {
+        areas: updatedAreas,
+      });
+      setAreas(updatedAreas);
+      setEditingArea(null);
+      setEditAreaName("");
+      onUpdate();
+    } catch (error) {
+      console.error("Error editing area:", error);
+      alert("Failed to edit area");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteArea = async (areaId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this area?");
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const updatedAreas = areas.filter((area) => area.id !== areaId);
+      await updateDoc(doc(db, "projects", projectId), {
+        areas: updatedAreas,
+      });
+      setAreas(updatedAreas);
+      setOpenMenuId(null);
+      onUpdate();
+    } catch (error) {
+      console.error("Error deleting area:", error);
+      alert("Failed to delete area");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMenuToggle = (e, areaId) => {
+    e.stopPropagation();
+    setOpenMenuId(prevId => prevId === areaId ? null : areaId);
+  };
+
+  const handleEditClick = (e, area) => {
+    e.stopPropagation();
+    setEditingArea(area.id);
+    setEditAreaName(area.name);
+    setOpenMenuId(null);
+  };
+
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #a0aec0;
+        }
+        .tasks-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .tasks-scroll::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 5px;
+        }
+        .tasks-scroll::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 5px;
+        }
+        .tasks-scroll::-webkit-scrollbar-thumb:hover {
+          background: #a0aec0;
+        }
+        .area-card {
+          pointer-events: none;
+        }
+        .area-card > * {
+          pointer-events: auto;
+        }
+      `}</style>
+
+      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
+        <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark text-white p-4 sm:p-6 rounded-t-lg flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-bold">Area Management</h2>
+            <button
+              onClick={onClose}
+              className="text-white hover:text-gray-200 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6 flex-1 overflow-hidden flex flex-col">
+          {!showAddArea && (
+            <button
+              onClick={() => setShowAddArea(true)}
+              className="w-full mb-6 bg-dimo-blue text-white px-4 py-3 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center justify-center space-x-2 flex-shrink-0"
+            >
+              <span className="text-xl">+</span>
+              <span>Add New Area</span>
+            </button>
+          )}
+
+          {showAddArea && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border-2 border-dimo-blue flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Area Name
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={newAreaName}
+                  onChange={(e) => setNewAreaName(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
+                  placeholder="Enter area name"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddArea}
+                    disabled={loading || !newAreaName.trim()}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddArea(false);
+                      setNewAreaName("");
+                    }}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {areas.length === 0 ? (
+              <div className="text-center py-12 flex-shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-16 w-16 mx-auto text-gray-400 mb-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                  />
+                </svg>
+                <p className="text-gray-500 text-lg mb-4">No areas added yet</p>
+                <p className="text-gray-400 text-sm">
+                  Click "Add New Area" to create your first area
+                </p>
+              </div>
+            ) : (
+              <div className="relative flex-1 flex flex-col min-h-0">
+                <div className="md:hidden text-center mb-4 flex-shrink-0">
+                  <p className="text-sm text-gray-500">← Swipe to view all areas →</p>
+                </div>
+
+                {areas.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => scroll("left")}
+                      className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-gray-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => scroll("right")}
+                      className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-gray-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                <div
+                  ref={scrollContainerRef}
+                  className="overflow-x-auto custom-scrollbar flex gap-4 sm:gap-6 pb-4 snap-x snap-mandatory flex-1"
+                >
+                  {areas.map((area) => (
+                    <div
+                      key={area.id}
+                      className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(65%-12px)] lg:w-[calc(45%-16px)] snap-center area-card"
+                    >
+                      {editingArea === area.id ? (
+                        <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-dimo-blue min-h-[400px] md:min-h-[500px] flex flex-col">
+                          <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
+                            <h3 className="text-lg font-bold text-white">Edit Area</h3>
+                          </div>
+                          <div className="p-6 flex-1 flex flex-col">
+                            <input
+                              type="text"
+                              value={editAreaName}
+                              onChange={(e) => setEditAreaName(e.target.value)}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none mb-4"
+                              placeholder="Enter area name"
+                              autoFocus
+                            />
+                            <div className="flex gap-2 mt-auto">
+                              <button
+                                onClick={() => handleEditArea(area.id)}
+                                disabled={loading || !editAreaName.trim()}
+                                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingArea(null);
+                                  setEditAreaName("");
+                                }}
+                                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden min-h-[400px] md:min-h-[500px] flex flex-col">
+                          <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4 relative flex-shrink-0">
+                            <h3 className="text-lg font-bold text-white pr-10 truncate">
+                              {area.name}
+                            </h3>
+
+                            <div
+                              className="absolute top-3 right-3"
+                              ref={(el) => (menuRefs.current[area.id] = el)}
+                            >
+                              <button
+                                onClick={(e) => handleMenuToggle(e, area.id)}
+                                className="bg-white bg-opacity-20 text-white p-2 rounded-full hover:bg-opacity-30 active:bg-opacity-40 transition duration-200 touch-manipulation"
+                                title="Options"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                  />
+                                </svg>
+                              </button>
+
+                              {openMenuId === area.id && (
+                                <div
+                                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-30"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <button
+                                    onClick={(e) => handleEditClick(e, area)}
+                                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 flex items-center space-x-3 touch-manipulation"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-4 w-4 flex-shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                      />
+                                    </svg>
+                                    <span>Edit Area</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteArea(area.id);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center space-x-3 touch-manipulation"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-4 w-4 flex-shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                    <span>Delete Area</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 overflow-y-auto tasks-scroll flex flex-col">
+                            {getTasksForArea(area.id).length === 0 ? (
+                              <div className="flex flex-col items-center justify-center flex-1 p-4">
+                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-8 w-8 text-gray-400"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                    />
+                                  </svg>
+                                </div>
+                                <p className="text-sm text-gray-500 text-center">No tasks assigned</p>
+                              </div>
+                            ) : (
+                              <div className="p-4 space-y-2">
+                                {getTasksForArea(area.id).map((task) => {
+                                  const statusInfo = getStatusInfo(task.status, task.approved);
+                                  const assignedEmployeeNames = task.assignedTo
+                                    ?.map((empId) => getEmployeeName(empId))
+                                    .join(", ") || "Unassigned";
+                                  
+                                  return (
+                                    <div
+                                      key={task.id}
+                                      onClick={(e) => handleTaskClick(e, task.id)}
+                                      className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-dimo-blue"
+                                    >
+                                      <div className="flex items-start justify-between gap-2 mb-2">
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="text-sm font-semibold text-gray-800">
+                                            {task.name}
+                                          </h4>
+                                          <p className="text-xs text-gray-500 mt-1">
+                                            Assigned to: <span className="font-medium text-dimo-blue">{assignedEmployeeNames}</span>
+                                          </p>
+                                        </div>
+                                        <div className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}>
+                                          {statusInfo.label}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {getTasksForArea(area.id).length > 0 && (
+                            <div className="pt-3 px-4 pb-4 border-t border-gray-200 text-center flex-shrink-0">
+                              <p className="text-xs text-gray-500 font-medium">
+                                {getTasksForArea(area.id).length} task(s)
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 text-center flex-shrink-0">
+                  <p className="text-sm text-gray-600">
+                    Total Areas: <span className="font-semibold">{areas.length}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// User Wise Modal Component - Swipeable Cards
+const UserWiseModal = ({ projectId, employees, onClose }) => {
+  const navigate = useNavigate();
+  const [tasks, setTasks] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch project to get areas
+        const projectDoc = await getDoc(doc(db, "projects", projectId));
+        if (projectDoc.exists()) {
+          setAreas(projectDoc.data().areas || []);
+        }
+
+        // Fetch all tasks for this project
+        const tasksQuery = query(
+          collection(db, "tasks"),
+          where("projectId", "==", projectId)
+        );
+        const tasksSnapshot = await getDocs(tasksQuery);
+        const tasksData = tasksSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTasks(tasksData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
+
+  const getAreaName = (areaIds) => {
+    if (!areaIds || areaIds.length === 0) return "Unassigned";
+    const area = areas.find((a) => a.id === areaIds[0]);
+    return area ? area.name : "Unassigned";
+  };
+
+  const getStatusInfo = (status, approved) => {
+    if (approved) {
+      return { color: "bg-green-500", label: "Approved" };
+    }
+    switch (status) {
+      case "complete":
+        return { color: "bg-blue-500", label: "Complete" };
+      case "in-progress":
+        return { color: "bg-yellow-500", label: "In Progress" };
+      case "hold":
+        return { color: "bg-orange-500", label: "On Hold" };
+      case "not-started":
+      default:
+        return { color: "bg-gray-400", label: "Not Started" };
+    }
+  };
+
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #a0aec0;
+        }
+        .user-card {
+          pointer-events: none;
+        }
+        .user-card > * {
+          pointer-events: auto;
+        }
+      `}</style>
+
+      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark text-white p-4 sm:p-6 rounded-t-lg flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-bold">User wise View</h2>
+            <button
+              onClick={onClose}
+              className="text-white hover:text-gray-200 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex flex-col p-4 sm:p-6">
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">Loading...</p>
+            </div>
+          ) : employees.length === 0 ? (
+            <div className="text-center py-12">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-16 w-16 mx-auto text-gray-400 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+              <p className="text-gray-500 text-lg">No employees assigned yet</p>
+            </div>
+          ) : (
+            <div className="relative flex-1 flex flex-col min-h-0">
+              <div className="md:hidden text-center mb-4 flex-shrink-0">
+                <p className="text-sm text-gray-500">← Swipe to view all users →</p>
+              </div>
+
+              {employees.length > 1 && (
+                <>
+                  <button
+                    onClick={() => scroll("left")}
+                    className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-gray-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => scroll("right")}
+                    className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-gray-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              <div
+                ref={scrollContainerRef}
+                className="overflow-x-auto custom-scrollbar flex gap-4 sm:gap-6 pb-4 snap-x snap-mandatory flex-1"
+              >
+                {employees.map((employee) => {
+                  const employeeTasks = tasks.filter(
+                    (task) => task.assignedTo && task.assignedTo.includes(employee.id)
+                  );
+
+                  return (
+                    <div
+                      key={employee.id}
+                      className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(65%-12px)] lg:w-[calc(45%-16px)] snap-center user-card"
+                    >
+                      <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden min-h-[400px] md:min-h-[500px] flex flex-col">
+                        {/* Employee Header */}
+                        <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark text-white p-4 flex-shrink-0">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-lg font-bold text-dimo-blue">
+                                {employee.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold truncate text-white">
+                                {employee.name}
+                              </h4>
+                              <p className="text-sm text-blue-100 truncate">{employee.email}</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-white border-opacity-30">
+                            <span className="text-xs font-semibold text-blue-100 bg-white bg-opacity-20 px-3 py-1 rounded-full inline-block">
+                              {employeeTasks.length} task(s)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Tasks List */}
+                        <div className="flex-1 overflow-y-auto flex flex-col p-4">
+                          {employeeTasks.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center flex-1">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-12 w-12 text-gray-300 mb-3"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                />
+                              </svg>
+                              <p className="text-sm text-gray-500 text-center">No tasks assigned</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {employeeTasks.map((task) => {
+                                const statusInfo = getStatusInfo(task.status, task.approved);
+
+                                return (
+                                  <div
+                                    key={task.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(
+                                        `/admin/project/${projectId}/employee/${employee.id}`
+                                      );
+                                    }}
+                                    className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-dimo-blue"
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <h5 className="text-sm font-semibold text-gray-800">
+                                          {task.name}
+                                        </h5>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Area: <span className="font-medium text-dimo-blue">
+                                            {getAreaName(task.areaIds)}
+                                          </span>
+                                        </p>
+                                      </div>
+                                      <div className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}>
+                                        {statusInfo.label}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 text-center flex-shrink-0">
+                <p className="text-sm text-gray-600">
+                  Total Users: <span className="font-semibold">{employees.length}</span>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Create Task Modal
+const CreateTaskModal = ({ projectId, project, onClose }) => {
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -236,17 +1244,17 @@ const CreateTaskModal = ({ projectId, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [allEmployees, setAllEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [selectedAreas, setSelectedAreas] = useState([]);
 
   useEffect(() => {
     const fetchAllEmployees = async () => {
-      // Fetch ALL employees from users collection
       const usersSnapshot = await getDocs(collection(db, "users"));
       const employeesData = usersSnapshot.docs
         .map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((user) => user.role === "employee"); // Filter only employees
+        .filter((user) => user.role === "employee");
 
       setAllEmployees(employeesData);
     };
@@ -255,6 +1263,12 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (selectedAreas.length === 0) {
+      alert("Please select at least one area");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -265,6 +1279,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
         details: taskData.details,
         projectId,
         assignedTo: selectedEmployees,
+        areaIds: selectedAreas,
         createdAt: createdAtISO,
         targetDate: taskData.targetDate,
         status: "not-started",
@@ -296,6 +1311,16 @@ const CreateTaskModal = ({ projectId, onClose }) => {
         return prev.filter((id) => id !== empId);
       } else {
         return [...prev, empId];
+      }
+    });
+  };
+
+  const toggleArea = (areaId) => {
+    setSelectedAreas((prev) => {
+      if (prev.includes(areaId)) {
+        return prev.filter((id) => id !== areaId);
+      } else {
+        return [...prev, areaId];
       }
     });
   };
@@ -344,6 +1369,76 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Area(s) <span className="text-red-600">*</span>
+            </label>
+            {project?.areas && project.areas.length > 0 ? (
+              <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
+                {project.areas.map((area) => (
+                  <div
+                    key={area.id}
+                    onClick={() => toggleArea(area.id)}
+                    className={`p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 ${
+                      selectedAreas.includes(area.id) ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 text-dimo-blue"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        <span className="text-sm font-medium">{area.name}</span>
+                      </div>
+                      <div
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                          selectedAreas.includes(area.id)
+                            ? "bg-dimo-blue border-dimo-blue"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {selectedAreas.includes(area.id) && (
+                          <span className="text-white text-xs">✓</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
+                <p className="text-sm text-gray-600">
+                  No areas available for this project.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Add areas using the three-dot menu → Area wise
+                </p>
+              </div>
+            )}
+            {project?.areas && project.areas.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                {selectedAreas.length} area(s) selected
+              </p>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Assign to Employees
             </label>
             <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
@@ -366,7 +1461,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
                         <p className="text-xs text-gray-500">{emp.email}</p>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                           selectedEmployees.includes(emp.id)
                             ? "bg-dimo-blue border-dimo-blue"
                             : "border-gray-300"
@@ -425,7 +1520,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || selectedEmployees.length === 0}
+              disabled={loading || selectedEmployees.length === 0 || selectedAreas.length === 0}
               className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Task"}
