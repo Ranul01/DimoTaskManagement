@@ -385,60 +385,6 @@ const ProjectDetail = () => {
   );
 };
 
-// Team Members View Component - Commented Out
-/* const TeamMembersView = ({ employees, projectId, navigate }) => {
-  if (employees.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-12 text-center">
-        <p className="text-gray-500 text-lg mb-4">
-          No employees assigned tasks in this project yet
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {employees.map((employee) => (
-        <div
-          key={employee.id}
-          onClick={() =>
-            navigate(
-              `/admin/project/${projectId}/employee/${employee.id}`
-            )
-          }
-          className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 cursor-pointer p-6"
-        >
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-dimo-blue to-dimo-dark rounded-full flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">
-                {employee.name.split(" ").length === 1
-                  ? employee.name.charAt(0).toUpperCase()
-                  : employee.name
-                      .split(" ")
-                      .map((n) => n.charAt(0))
-                      .join("")
-                      .toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {employee.name}
-              </h3>
-              <p className="text-sm text-gray-500">{employee.email}</p>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <span className="text-dimo-blue text-sm font-medium">
-              View Tasks →
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}; */
-
 // Area Wise View Component
 const AreaWiseView = ({
   projectId,
@@ -853,6 +799,9 @@ const AreaWiseView = ({
                         {getTasksForArea(area.id).map((task) => {
                           const statusInfo = getStatusInfo(task.status, task.approved);
                           const firstEmployeeId = task.assignedTo?.[0];
+                          const assignees = (task.assignedTo || [])
+                            .map((id) => getEmployeeName(id))
+                            .join(", ");
 
                           return (
                             <div
@@ -861,9 +810,14 @@ const AreaWiseView = ({
                               className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100"
                             >
                               <div className="flex items-start justify-between mb-2 gap-2">
-                                <h4 className="text-sm font-semibold text-gray-800 flex-1 line-clamp-2">
-                                  {task.name}
-                                </h4>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-sm font-semibold text-gray-800 line-clamp-2">
+                                    {task.name}
+                                  </h4>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Assigned to: <span className="font-medium text-dimo-blue">{assignees || "Unassigned"}</span>
+                                  </p>
+                                </div>
                                 <div className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}>
                                   {statusInfo.label}
                                 </div>
@@ -1275,6 +1229,11 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
       return;
     }
 
+    if (selectedAreas.length === 0) {
+      alert("Please select at least one area");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -1375,7 +1334,7 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Area(s)
+              Select Area(s) <span className="text-red-600">*</span>
             </label>
             {project?.areas && project.areas.length > 0 ? (
               <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
@@ -1433,11 +1392,16 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
                 </p>
               </div>
             )}
-            {project?.areas && project.areas.length > 0 && (
-              <p className="text-xs text-gray-500 mt-2">
-                {selectedAreas.length} area(s) selected
-              </p>
-            )}
+            <div className="mt-2">
+              {selectedAreas.length === 0 && (
+                <p className="text-xs text-red-600">Please select at least one area</p>
+              )}
+              {project?.areas && project.areas.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {selectedAreas.length} area(s) selected
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="mb-6">
@@ -1523,7 +1487,7 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || selectedEmployees.length === 0}
+              disabled={loading || selectedEmployees.length === 0 || selectedAreas.length === 0}
               className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Task"}
