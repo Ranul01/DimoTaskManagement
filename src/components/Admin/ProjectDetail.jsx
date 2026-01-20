@@ -716,7 +716,7 @@ const AreaWiseView = ({
                       <button
                         onClick={() => handleEditArea(area.id)}
                         disabled={loading || !editAreaName.trim()}
-                        className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50" //bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2
                       >
                         Save
                       </button>
