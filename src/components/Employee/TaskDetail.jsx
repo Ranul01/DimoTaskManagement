@@ -25,41 +25,76 @@ const TaskDetail = () => {
   const [pendingHoldReason, setPendingHoldReason] = useState("");
 
   useEffect(() => {
-    const fetchTask = async () => {
+    const fetchTaskData = async () => {
       try {
+        setLoading(true);
+
+        // Get task details
         const taskDoc = await getDoc(doc(db, "tasks", taskId));
-        if (taskDoc.exists()) {
-          const taskData = { id: taskDoc.id, ...taskDoc.data() };
-          setTask(taskData);
-          setPendingStatus(taskData.status);
-
-          // Fetch project details to get areas
-          if (taskData.projectId) {
-            const projectDoc = await getDoc(doc(db, "projects", taskData.projectId));
-            if (projectDoc.exists()) {
-              setProject({ id: projectDoc.id, ...projectDoc.data() });
-            }
-          }
-
-          // Fetch employee details
-          const employeePromises = taskData.assignedTo.map((empId) =>
-            getDoc(doc(db, "users", empId))
-          );
-          const employeeDocs = await Promise.all(employeePromises);
-          const employees = employeeDocs
-            .filter((doc) => doc.exists())
-            .map((doc) => ({ id: doc.id, ...doc.data() }));
-          setAssignedEmployees(employees);
+        if (!taskDoc.exists()) {
+          console.error("Task not found");
+          navigate("/employee");
+          return;
         }
+
+        const taskData = { id: taskDoc.id, ...taskDoc.data() };
+
+        // Check if task is deleted
+        if (taskData.deleted) {
+          alert("This task has been deleted and is no longer available.");
+          navigate("/employee");
+          return;
+        }
+
+        setTask(taskData);
+        setPendingStatus(taskData.status);
+
+        // Fetch project details to get areas
+        if (taskData.projectId) {
+          const projectDoc = await getDoc(doc(db, "projects", taskData.projectId));
+          if (projectDoc.exists()) {
+            setProject({ id: projectDoc.id, ...projectDoc.data() });
+          }
+        }
+
+        // Fetch employee details
+        const employeePromises = taskData.assignedTo.map((empId) =>
+          getDoc(doc(db, "users", empId))
+        );
+        const employeeDocs = await Promise.all(employeePromises);
+        const employees = employeeDocs
+          .filter((doc) => doc.exists())
+          .map((doc) => ({ id: doc.id, ...doc.data() }));
+        setAssignedEmployees(employees);
       } catch (error) {
-        console.error("Error fetching task:", error);
+        console.error("Error fetching task data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTask();
-  }, [taskId]);
+    fetchTaskData();
+
+    // Listen to task updates in real-time
+    const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const updatedTask = { id: docSnapshot.id, ...docSnapshot.data() };
+        
+        // Check if task was deleted
+        if (updatedTask.deleted) {
+          alert("This task has been deleted.");
+          navigate("/employee");
+          return;
+        }
+        
+        setTask(updatedTask);
+      } else {
+        navigate("/employee");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [taskId, navigate]);
 
   // Helper function to get area names
   const getAreaNames = () => {

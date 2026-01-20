@@ -24,21 +24,7 @@ const EmployeeDashboard = () => {
     };
     getUserName();
 
-    // Listen to all tasks assigned to this employee
-    const tasksQuery = query(
-      collection(db, "tasks"),
-      where("assignedTo", "array-contains", currentUser.uid)
-    );
-    
-    const unsubscribeTasks = onSnapshot(tasksQuery, (tasksSnapshot) => {
-      const tasksData = tasksSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setAllTasks(tasksData);
-    });
-
-    // Listen to all projects (separately)
+    // Listen to all projects
     const projectsQuery = query(collection(db, "projects"));
     const unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
       const projectsData = snapshot.docs.map((doc) => ({
@@ -48,10 +34,25 @@ const EmployeeDashboard = () => {
       setProjects(projectsData);
     });
 
-    // Cleanup both listeners
+    // Listen to all tasks assigned to this employee - remove deleted filter from query
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      where("assignedTo", "array-contains", currentUser.uid)
+    );
+    
+    const unsubscribeTasks = onSnapshot(tasksQuery, (tasksSnapshot) => {
+      const tasksData = tasksSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((task) => !task.deleted); // Filter deleted tasks in memory
+      setAllTasks(tasksData);
+    });
+
     return () => {
-      unsubscribeTasks();
       unsubscribeProjects();
+      unsubscribeTasks();
     };
   }, [currentUser]);
 

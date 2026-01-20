@@ -59,7 +59,11 @@ const AdminDashboard = () => {
       setEmployees(employeesData);
     });
 
-    const tasksQuery = query(collection(db, "tasks"));
+    // Update tasks query to exclude deleted tasks
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      where("deleted", "!=", true)
+    );
     const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
       const tasksData = snapshot.docs.map((doc) => ({
         id: doc.id,

@@ -10,6 +10,8 @@ import {
   where,
   updateDoc,
   deleteDoc,
+  onSnapshot,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
@@ -39,43 +41,45 @@ const ProjectDetail = () => {
     return name.charAt(0).toUpperCase();
   };
 
-  const fetchProject = async () => {
-    try {
-      const projectDoc = await getDoc(doc(db, "projects", projectId));
-      if (projectDoc.exists()) {
-        const projectData = { id: projectDoc.id, ...projectDoc.data() };
-        setProject(projectData);
-        setAreas(projectData.areas || []);
+  useEffect(() => {
+    // Listen to project details in real-time
+    const unsubscribeProject = onSnapshot(
+      doc(db, "projects", projectId),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const projectData = { id: docSnapshot.id, ...docSnapshot.data() };
+          setProject(projectData);
+          setAreas(projectData.areas || []);
+        }
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching project:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
 
-  const fetchEmployeesWithTasks = async () => {
-    try {
-      const tasksQuery = query(
-        collection(db, "tasks"),
-        where("projectId", "==", projectId)
-      );
-      const tasksSnapshot = await getDocs(tasksQuery);
+    // Listen to all tasks for this project - exclude deleted tasks
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      where("projectId", "==", projectId)
+    );
 
-      const employeeIds = new Set();
-      const tasksData = tasksSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    const unsubscribeTasks = onSnapshot(tasksQuery, async (snapshot) => {
+      const tasksData = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((task) => !task.deleted); // Filter deleted tasks in memory
+      
       setTasks(tasksData);
 
-      tasksSnapshot.docs.forEach((doc) => {
-        const task = doc.data();
+      // Extract unique employee IDs from non-deleted tasks
+      const employeeIds = new Set();
+      tasksData.forEach((task) => {
         if (task.assignedTo && Array.isArray(task.assignedTo)) {
           task.assignedTo.forEach((empId) => employeeIds.add(empId));
         }
       });
 
+      // Fetch employee details
       if (employeeIds.size > 0) {
         const usersSnapshot = await getDocs(collection(db, "users"));
         const employeesData = usersSnapshot.docs
@@ -96,14 +100,12 @@ const ProjectDetail = () => {
       } else {
         setEmployees([]);
       }
-    } catch (error) {
-      console.error("Error fetching employees with tasks:", error);
-    }
-  };
+    });
 
-  useEffect(() => {
-    fetchProject();
-    fetchEmployeesWithTasks();
+    return () => {
+      unsubscribeProject();
+      unsubscribeTasks();
+    };
   }, [projectId]);
 
   useEffect(() => {
@@ -225,32 +227,6 @@ const ProjectDetail = () => {
                   className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-30"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Team Members View - Commented Out */}
-                  {/* <button
-                    onClick={() => handleViewChange("team")}
-                    className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
-                      currentView === "team"
-                        ? "bg-blue-50 text-dimo-blue"
-                        : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
-                    }`}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                      />
-                    </svg>
-                    <span>Team Members</span>
-                  </button> */}
-
                   <button
                     onClick={() => handleViewChange("area")}
                     className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
@@ -327,15 +303,6 @@ const ProjectDetail = () => {
           )}
         </div>
 
-        {/* Team Members View - Commented Out */}
-        {/* {currentView === "team" && (
-          <TeamMembersView
-            employees={employees}
-            projectId={projectId}
-            navigate={navigate}
-          />
-        )} */}
-
         {currentView === "area" && (
           <AreaWiseView
             projectId={projectId}
@@ -365,20 +332,14 @@ const ProjectDetail = () => {
         <CreateTaskModal
           projectId={projectId}
           project={project}
-          onClose={() => {
-            setShowCreateTaskModal(false);
-            fetchEmployeesWithTasks();
-          }}
+          onClose={() => setShowCreateTaskModal(false)}
         />
       )}
 
       {showCreateTaskModal && currentView === "area" && (
         <CreateAreaModal
           projectId={projectId}
-          onClose={() => {
-            setShowCreateTaskModal(false);
-            fetchProject();
-          }}
+          onClose={() => setShowCreateTaskModal(false)}
         />
       )}
     </div>
@@ -1055,7 +1016,7 @@ const UserWiseView = ({
                           stroke="currentColor"
                         >
                           <path
-                            strokeLineCap="round"
+                            strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
@@ -1249,6 +1210,7 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
         targetDate: taskData.targetDate,
         status: "not-started",
         approved: false,
+        deleted: false, // Add deleted field
         rejectionReason: null,
         holdReason: null,
         remarksChat: [],
@@ -1362,7 +1324,7 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
                             d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                           />
                           <path
-                            strokeLineCap="round"
+                            strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
                             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"

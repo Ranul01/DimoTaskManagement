@@ -46,10 +46,12 @@ const EmployeeProjectTasks = () => {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const tasksData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const tasksData = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((task) => !task.deleted); // Filter deleted tasks in memory
       setTasks(tasksData);
 
       // Fetch employees map
