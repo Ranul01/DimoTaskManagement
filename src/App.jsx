@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Auth/Login";
 import Register from "./components/Auth/Register";
+import ForgotPassword from "./components/Auth/ForgotPassword";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import ProjectDetail from "./components/Admin/ProjectDetail";
 import EmployeeTasks from "./components/Admin/EmployeeTasks";
@@ -9,6 +10,7 @@ import EmployeeDashboard from "./components/Employee/EmployeeDashboard";
 import EmployeeProjectTasks from "./components/Employee/EmployeeProjectTasks";
 import TaskDetail from "./components/Employee/TaskDetail";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
+import TaskHistory from "./components/Admin/TaskHistory";
 
 function App() {
   return (
@@ -45,6 +47,10 @@ const AppRoutes = () => {
           )
         }
       />
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
+      />
 
       {/* Admin Routes */}
       <Route
@@ -68,6 +74,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRole="admin">
             <EmployeeTasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/history"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <TaskHistory />
           </ProtectedRoute>
         }
       />
