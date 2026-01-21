@@ -191,11 +191,13 @@ const AdminDashboard = () => {
               </p>
             </div>
 
-            {/* Notification Bell */}
-            <div className="relative" ref={notificationRef}>
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              {/* History Button - Mobile Only */}
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                onClick={() => navigate("/admin/history")}
+                className="md:hidden p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                title="View Task History"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -208,101 +210,124 @@ const AdminDashboard = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-
-                {/* Notification Badge */}
-                {totalUnread > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                    {totalUnread > 9 ? "9+" : totalUnread}
-                  </span>
-                )}
               </button>
 
-              {/* Notifications Dropdown */}
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[400px] sm:max-h-[500px] overflow-hidden flex flex-col">
-                  {/* Header */}
-                  <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-700">
-                    <h3 className="text-lg font-semibold text-white">
-                      New Messages ({totalUnread})
-                    </h3>
-                  </div>
+              {/* Notification Bell */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-gray-700"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    />
+                  </svg>
 
-                  {/* Notifications List */}
-                  <div className="overflow-y-auto flex-1">
-                    {tasksWithUnread.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-12 w-12 mx-auto text-gray-400 mb-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                          />
-                        </svg>
-                        <p className="text-gray-500">No new messages</p>
-                      </div>
-                    ) : (
-                      tasksWithUnread.map((task) => {
-                        const employee = getEmployeeForTask(task);
-                        return (
-                          <div
-                            key={task.id}
-                            onClick={() => handleNotificationClick(task)}
-                            className="p-4 border-b border-gray-100 hover:bg-purple-50 cursor-pointer transition"
+                  {/* Notification Badge */}
+                  {totalUnread > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                      {totalUnread > 9 ? "9+" : totalUnread}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[400px] sm:max-h-[500px] overflow-hidden flex flex-col">
+                    {/* Header */}
+                    <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-700">
+                      <h3 className="text-lg font-semibold text-white">
+                        New Messages ({totalUnread})
+                      </h3>
+                    </div>
+
+                    {/* Notifications List */}
+                    <div className="overflow-y-auto flex-1">
+                      {tasksWithUnread.length === 0 ? (
+                        <div className="p-8 text-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-12 w-12 mx-auto text-gray-400 mb-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <div className="flex items-start space-x-3">
-                              {/* Employee Avatar */}
-                              <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-white font-semibold text-sm">
-                                  {employee?.name?.charAt(0).toUpperCase() ||
-                                    "?"}
-                                </span>
-                              </div>
-
-                              {/* Message Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                  <p className="text-sm font-semibold text-gray-900 truncate">
-                                    {employee?.name || "Unknown Employee"}
-                                  </p>
-                                  <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                                    {task.unreadCount}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                            />
+                          </svg>
+                          <p className="text-gray-500">No new messages</p>
+                        </div>
+                      ) : (
+                        tasksWithUnread.map((task) => {
+                          const employee = getEmployeeForTask(task);
+                          return (
+                            <div
+                              key={task.id}
+                              onClick={() => handleNotificationClick(task)}
+                              className="p-4 border-b border-gray-100 hover:bg-purple-50 cursor-pointer transition"
+                            >
+                              <div className="flex items-start space-x-3">
+                                {/* Employee Avatar */}
+                                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <span className="text-white font-semibold text-sm">
+                                    {employee?.name?.charAt(0).toUpperCase() ||
+                                      "?"}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Task: {task.name}
-                                </p>
-                                <p className="text-sm text-gray-700 line-clamp-2">
-                                  {task.latestUnreadMsg.text}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {new Date(
-                                    task.latestUnreadMsg.sentAt,
-                                  ).toLocaleString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </p>
+
+                                {/* Message Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <p className="text-sm font-semibold text-gray-900 truncate">
+                                      {employee?.name || "Unknown Employee"}
+                                    </p>
+                                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                                      {task.unreadCount}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    Task: {task.name}
+                                  </p>
+                                  <p className="text-sm text-gray-700 line-clamp-2">
+                                    {task.latestUnreadMsg.text}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {new Date(
+                                      task.latestUnreadMsg.sentAt,
+                                    ).toLocaleString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    )}
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -11,6 +11,7 @@ import EmployeeProjectTasks from "./components/Employee/EmployeeProjectTasks";
 import TaskDetail from "./components/Employee/TaskDetail";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import TaskHistory from "./components/Admin/TaskHistory";
+import EmployeeTaskHistory from "./components/Employee/EmployeeTaskHistory";
 
 function App() {
   return (
@@ -108,6 +109,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRole="employee">
             <TaskDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/employee/history"
+        element={
+          <ProtectedRoute allowedRoles={["employee"]}>
+            <EmployeeTaskHistory />
           </ProtectedRoute>
         }
       />
