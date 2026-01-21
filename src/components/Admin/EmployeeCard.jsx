@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   PieChart,
   Pie,
@@ -7,6 +8,10 @@ import {
 } from "recharts";
 
 const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [mouseStart, setMouseStart] = useState(null);
+
   const COLORS = {
     notStarted: "#9CA3AF",
     inProgress: "#60A5FA",
@@ -31,10 +36,65 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
     { name: "On Hold", value: summary.hold, color: COLORS.hold },
   ].filter((item) => item.value > 0);
 
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isSwipe = Math.abs(distance) > minSwipeDistance;
+    
+    // If it's not a swipe, do nothing (prevent click navigation)
+    if (!isSwipe) {
+      setTouchStart(null);
+      setTouchEnd(null);
+    }
+  };
+
+  const onMouseDown = (e) => {
+    setMouseStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const onMouseUp = (e) => {
+    if (!mouseStart) return;
+
+    const deltaX = Math.abs(e.clientX - mouseStart.x);
+    const deltaY = Math.abs(e.clientY - mouseStart.y);
+    
+    // If mouse moved less than 5px, consider it a click (prevent navigation)
+    if (deltaX < 5 && deltaY < 5) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    setMouseStart(null);
+  };
+
+  const handleCardClick = (e) => {
+    // Prevent navigation on click
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <div
-      onClick={() => handleEmployeeClick(employee.id)}
-      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 cursor-pointer overflow-hidden flex-shrink-0 w-full md:w-[calc(33.333%-1rem)] snap-center"
+      onClick={handleCardClick}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden flex-shrink-0 w-full md:w-[calc(33.333%-1rem)] snap-center select-none"
     >
       {/* Card Header */}
       <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-6">
@@ -165,13 +225,6 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
               {summary.hold}
             </span>
           </div>
-        </div>
-
-        {/* View Details Link */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <span className="text-dimo-blue text-sm font-medium">
-            View All Tasks →
-          </span>
         </div>
       </div>
     </div>
