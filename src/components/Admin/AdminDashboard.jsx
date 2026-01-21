@@ -49,7 +49,7 @@ const AdminDashboard = () => {
 
     const employeesQuery = query(
       collection(db, "users"),
-      where("role", "==", "employee")
+      where("role", "==", "employee"),
     );
     const unsubscribeEmployees = onSnapshot(employeesQuery, (snapshot) => {
       const employeesData = snapshot.docs.map((doc) => ({
@@ -59,7 +59,11 @@ const AdminDashboard = () => {
       setEmployees(employeesData);
     });
 
-    const tasksQuery = query(collection(db, "tasks"));
+    // Update tasks query to exclude deleted tasks
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      where("deleted", "!=", true),
+    );
     const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
       const tasksData = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -91,7 +95,7 @@ const AdminDashboard = () => {
 
   const getEmployeeTaskSummary = (employeeId) => {
     const employeeTasks = allTasks.filter((task) =>
-      task.assignedTo?.includes(employeeId)
+      task.assignedTo?.includes(employeeId),
     );
 
     return {
@@ -101,11 +105,11 @@ const AdminDashboard = () => {
       inProgress: employeeTasks.filter((t) => t.status === "in-progress")
         .length,
       completed: employeeTasks.filter(
-        (t) => t.status === "complete" && t.approved
+        (t) => t.status === "complete" && t.approved,
       ).length,
       hold: employeeTasks.filter((t) => t.status === "hold").length,
       pending: employeeTasks.filter(
-        (t) => t.status === "complete" && !t.approved
+        (t) => t.status === "complete" && !t.approved,
       ).length,
     };
   };
@@ -115,12 +119,12 @@ const AdminDashboard = () => {
       .filter((task) => {
         if (!task.remarksChat || task.remarksChat.length === 0) return false;
         return task.remarksChat.some(
-          (msg) => msg.senderRole === "employee" && !msg.adminRead
+          (msg) => msg.senderRole === "employee" && !msg.adminRead,
         );
       })
       .map((task) => {
         const unreadCount = task.remarksChat.filter(
-          (msg) => msg.senderRole === "employee" && !msg.adminRead
+          (msg) => msg.senderRole === "employee" && !msg.adminRead,
         ).length;
 
         const latestUnreadMsg = task.remarksChat
@@ -136,7 +140,7 @@ const AdminDashboard = () => {
       .sort(
         (a, b) =>
           new Date(b.latestUnreadMsg.sentAt) -
-          new Date(a.latestUnreadMsg.sentAt)
+          new Date(a.latestUnreadMsg.sentAt),
       );
   };
 
@@ -144,7 +148,7 @@ const AdminDashboard = () => {
     return allTasks.reduce((total, task) => {
       if (!task.remarksChat) return total;
       const unreadInTask = task.remarksChat.filter(
-        (msg) => msg.senderRole === "employee" && !msg.adminRead
+        (msg) => msg.senderRole === "employee" && !msg.adminRead,
       ).length;
       return total + unreadInTask;
     }, 0);
@@ -282,7 +286,7 @@ const AdminDashboard = () => {
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1">
                                   {new Date(
-                                    task.latestUnreadMsg.sentAt
+                                    task.latestUnreadMsg.sentAt,
                                   ).toLocaleString("en-US", {
                                     month: "short",
                                     day: "numeric",
@@ -324,6 +328,12 @@ const AdminDashboard = () => {
             }`}
           >
             User Summary
+          </button>
+          <button
+            onClick={() => navigate("/admin/history")}
+            className="px-6 py-3 rounded-lg font-medium transition duration-200 bg-white text-gray-700 hover:bg-gray-100"
+          >
+            Task History
           </button>
         </div>
 

@@ -11,10 +11,8 @@ import {
   getDocs,
   updateDoc,
   arrayUnion,
-  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
-import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
 
 const EmployeeTasks = () => {
@@ -40,7 +38,7 @@ const EmployeeTasks = () => {
           console.log("Project data loaded:", projectData);
           console.log("Project areas:", projectData.areas);
         }
-      },
+      }
     );
 
     // Fetch employee details
@@ -54,17 +52,20 @@ const EmployeeTasks = () => {
     fetchEmployee();
 
     // Listen to tasks for this employee in this project
+    // Query without the deleted filter to avoid composite index requirement
     const q = query(
       collection(db, "tasks"),
       where("projectId", "==", projectId),
-      where("assignedTo", "array-contains", employeeId),
+      where("assignedTo", "array-contains", employeeId)
     );
 
     const unsubscribeTasks = onSnapshot(q, (snapshot) => {
-      const tasksData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const tasksData = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((task) => !task.deleted); // Filter deleted tasks in memory
       setTasks(tasksData);
     });
 
@@ -143,12 +144,23 @@ const EmployeeTasks = () => {
 
   const handleDeleteTask = async (taskId, taskName) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete the task "${taskName}"? This action cannot be undone.`,
+      `Are you sure you want to delete the task "${taskName}"? This task will be moved to history.`,
     );
 
     if (confirmDelete) {
       try {
-        await deleteDoc(doc(db, "tasks", taskId));
+        // Soft delete - mark as deleted instead of actually deleting
+        await updateDoc(doc(db, "tasks", taskId), {
+          deleted: true,
+          deletedAt: new Date().toISOString(),
+          deletedBy: "admin",
+          statusHistory: arrayUnion({
+            status: "deleted",
+            changedBy: "admin",
+            changedAt: new Date().toISOString(),
+            note: "Task deleted and moved to history",
+          }),
+        });
       } catch (error) {
         console.error("Error deleting task:", error);
         alert("Failed to delete task");
@@ -1004,6 +1016,7 @@ const CreateTaskModal = ({
         targetDate: taskData.targetDate,
         status: "not-started",
         approved: false,
+        deleted: false,
         rejectionReason: null,
         holdReason: null,
         remarksChat: [],
