@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
@@ -10,107 +16,107 @@ const TaskDetail = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [task, setTask] = useState(null);
+  const [project, setProject] = useState(null);
   const [assignedEmployees, setAssignedEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [pendingHoldReason, setPendingHoldReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const fetchTask = async () => {
+    const fetchTaskData = async () => {
       try {
-        const taskDoc = await getDoc(doc(db, "tasks", taskId));
-        if (taskDoc.exists()) {
-          const taskData = { id: taskDoc.id, ...taskDoc.data() };
-          setTask(taskData);
-          setPendingStatus(taskData.status);
-          setMessages(taskData.remarksChat || []);
+        setLoading(true);
 
-          // Fetch employee details
-          const employeePromises = taskData.assignedTo.map((empId) =>
-            getDoc(doc(db, "users", empId))
-          );
-          const employeeDocs = await Promise.all(employeePromises);
-          const employees = employeeDocs
-            .filter((doc) => doc.exists())
-            .map((doc) => ({ id: doc.id, ...doc.data() }));
-          setAssignedEmployees(employees);
+        // Get task details
+        const taskDoc = await getDoc(doc(db, "tasks", taskId));
+        if (!taskDoc.exists()) {
+          console.error("Task not found");
+          navigate("/employee");
+          return;
         }
+
+        const taskData = { id: taskDoc.id, ...taskDoc.data() };
+
+        // Check if task is deleted
+        if (taskData.deleted) {
+          alert("This task has been deleted and is no longer available.");
+          navigate("/employee");
+          return;
+        }
+
+        setTask(taskData);
+        setPendingStatus(taskData.status);
+
+        // Fetch project details to get areas
+        if (taskData.projectId) {
+          const projectDoc = await getDoc(doc(db, "projects", taskData.projectId));
+          if (projectDoc.exists()) {
+            setProject({ id: projectDoc.id, ...projectDoc.data() });
+          }
+        }
+
+        // Fetch employee details
+        const employeePromises = taskData.assignedTo.map((empId) =>
+          getDoc(doc(db, "users", empId))
+        );
+        const employeeDocs = await Promise.all(employeePromises);
+        const employees = employeeDocs
+          .filter((doc) => doc.exists())
+          .map((doc) => ({ id: doc.id, ...doc.data() }));
+        setAssignedEmployees(employees);
       } catch (error) {
-        console.error("Error fetching task:", error);
+        console.error("Error fetching task data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTask();
-  }, [taskId]);
+    fetchTaskData();
 
-  // Mark admin messages as read when component mounts
-  useEffect(() => {
-    const markAdminMessagesAsRead = async () => {
-      if (!task || !task.remarksChat || task.remarksChat.length === 0) return;
-      
-      const hasUnreadAdminMessages = task.remarksChat.some(
-        (msg) => msg.senderRole === "admin" && !msg.employeeRead
-      );
-      
-      if (hasUnreadAdminMessages) {
-        const updatedChat = task.remarksChat.map((msg) => ({
-          ...msg,
-          employeeRead: msg.senderRole === "admin" ? true : msg.employeeRead || false
-        }));
+    // Listen to task updates in real-time
+    const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const updatedTask = { id: docSnapshot.id, ...docSnapshot.data() };
         
-        try {
-          await updateDoc(doc(db, "tasks", taskId), {
-            remarksChat: updatedChat,
-          });
-        } catch (error) {
-          console.error("Error marking messages as read:", error);
+        // Check if task was deleted
+        if (updatedTask.deleted) {
+          alert("This task has been deleted.");
+          navigate("/employee");
+          return;
         }
-      }
-    };
-    
-    if (task) {
-      markAdminMessagesAsRead();
-    }
-  }, [task, taskId]);
-
-  // Listen to real-time chat updates
-  useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "tasks", taskId), (doc) => {
-      if (doc.exists()) {
-        const taskData = doc.data();
-        setMessages(taskData.remarksChat || []);
-        setTask((prev) => ({ ...prev, ...taskData }));
+        
+        setTask(updatedTask);
+      } else {
+        navigate("/employee");
       }
     });
 
-    return unsubscribe;
-  }, [taskId]);
+    return () => unsubscribe();
+  }, [taskId, navigate]);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+  // Helper function to get area names
+  const getAreaNames = () => {
+    if (!task?.areaIds || !Array.isArray(task.areaIds) || task.areaIds.length === 0 || !project?.areas) return [];
+    return task.areaIds
+      .map(areaId => {
+        const area = project.areas.find(a => a.id === areaId);
+        return area?.name;
+      })
+      .filter(name => name); // Remove undefined values
+  };
 
   // Helper function to get rejection date from status history
   const getRejectionDate = () => {
     if (!task || !task.statusHistory) return null;
-    
+
     const rejections = task.statusHistory.filter(
       (history) => history.status === "rejected"
     );
-    
+
     if (rejections.length === 0) return null;
-    
+
     const latestRejection = rejections[rejections.length - 1];
     return latestRejection.changedAt;
   };
@@ -118,13 +124,13 @@ const TaskDetail = () => {
   // Helper function to get approval date from status history
   const getApprovalDate = () => {
     if (!task || !task.statusHistory) return null;
-    
+
     const approvals = task.statusHistory.filter(
       (history) => history.status === "approved"
     );
-    
+
     if (approvals.length === 0) return null;
-    
+
     const latestApproval = approvals[approvals.length - 1];
     return latestApproval.changedAt;
   };
@@ -138,40 +144,6 @@ const TaskDetail = () => {
     // Clear hold reason if not selecting hold
     if (newStatus !== "hold") {
       setPendingHoldReason("");
-    }
-  };
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    
-    if (!message.trim() || task.approved) return;
-
-    setSending(true);
-
-    try {
-      // Get user's name from Firestore
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      const userName = userDoc.exists() ? userDoc.data().name : "Employee";
-
-      const newMessage = {
-        text: message.trim(),
-        sentBy: userName, // Use actual name from Firestore
-        sentById: currentUser.uid,
-        senderRole: "employee",
-        sentAt: new Date().toISOString(),
-        employeeRead: true, // Employee's own messages are already "read"
-      };
-
-      await updateDoc(doc(db, "tasks", taskId), {
-        remarksChat: arrayUnion(newMessage),
-      });
-
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message");
-    } finally {
-      setSending(false);
     }
   };
 
@@ -260,6 +232,8 @@ const TaskDetail = () => {
     );
   }
 
+  const areaNames = getAreaNames();
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -311,6 +285,61 @@ const TaskDetail = () => {
               </label>
               <p className="text-xl font-semibold text-gray-900">{task.name}</p>
             </div>
+
+            {/* Task Details */}
+            {task.details && (
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Task Details
+                </label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {task.details}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Assigned Areas */}
+            {areaNames.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-2">
+                  Assigned Area(s)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {areaNames.map((areaName, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-dimo-blue"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium text-dimo-blue">
+                        {areaName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Assigned Employees */}
             <div>
@@ -444,7 +473,8 @@ const TaskDetail = () => {
                       />
                     </svg>
                     <p className="text-sm text-red-700">
-                      Rejected on: {new Date(getRejectionDate()).toLocaleString("en-US", {
+                      Rejected on:{" "}
+                      {new Date(getRejectionDate()).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -496,7 +526,8 @@ const TaskDetail = () => {
                       />
                     </svg>
                     <p className="text-sm text-green-700">
-                      Approved on: {new Date(getApprovalDate()).toLocaleString("en-US", {
+                      Approved on:{" "}
+                      {new Date(getApprovalDate()).toLocaleString("en-US", {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -508,156 +539,6 @@ const TaskDetail = () => {
                 )}
               </div>
             )}
-
-            {/* Chat Section */}
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-              {/* Chat Header */}
-              <div className="bg-gradient-to-r from-gray-500 to-gray-700 text-white p-4">
-                <div className="flex items-center space-x-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    />
-                  </svg>
-                  <h3 className="text-lg font-semibold">Task Discussion</h3>
-                  {messages.length > 0 && (
-                    <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded-full">
-                      {messages.length}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-100 mt-1">
-                  Communicate with admin about this task
-                </p>
-              </div>
-
-              {/* Messages Area */}
-              <div className="bg-gray-50 p-4 h-96 overflow-y-auto">
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center text-gray-500">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-12 w-12 mx-auto mb-3 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                        />
-                      </svg>
-                      <p className="font-medium">No messages yet</p>
-                      <p className="text-sm mt-1">Start a conversation about this task</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {messages.map((msg, index) => (
-                      <div
-                        key={index}
-                        className={`flex ${
-                          msg.senderRole === "employee" ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-lg p-4 ${
-                            msg.senderRole === "employee"
-                              ? "bg-blue-500 text-white"
-                              : "bg-white border border-gray-200 text-gray-900"
-                          }`}
-                        >
-                          <p className="text-xs font-semibold opacity-75 mb-2">
-                            {msg.sentBy}
-                          </p>
-                          <p className="text-sm whitespace-pre-wrap break-words">
-                            {msg.text}
-                          </p>
-                          <p
-                            className={`text-xs mt-2 ${
-                              msg.senderRole === "employee"
-                                ? "text-blue-100"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {new Date(msg.sentAt).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                )}
-              </div>
-
-              {/* Input Area */}
-              <form
-                onSubmit={handleSendMessage}
-                className="border-t border-gray-200 p-4 bg-white"
-              >
-                <div className="flex items-center space-x-3">
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={
-                      task.approved
-                        ? "Chat is disabled for approved tasks"
-                        : "Type your message..."
-                    }
-                    disabled={task.approved}
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent outline-none resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    rows="2"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e);
-                      }
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={sending || !message.trim() || task.approved}
-                    className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                  >
-                    <span>Send</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Press Enter to send, Shift+Enter for new line
-                </p>
-              </form>
-            </div>
           </div>
         </div>
       </div>

@@ -27,27 +27,26 @@ const EmployeeDashboard = () => {
     // Listen to all projects
     const projectsQuery = query(collection(db, "projects"));
     const unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
-      const projectsData = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((project) =>
-          project.employees?.some((emp) => emp.id === currentUser.uid)
-        );
+      const projectsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setProjects(projectsData);
     });
 
-    // Listen to all tasks assigned to this employee
+    // Listen to all tasks assigned to this employee - remove deleted filter from query
     const tasksQuery = query(
       collection(db, "tasks"),
       where("assignedTo", "array-contains", currentUser.uid)
     );
-    const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
-      const tasksData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    
+    const unsubscribeTasks = onSnapshot(tasksQuery, (tasksSnapshot) => {
+      const tasksData = tasksSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((task) => !task.deleted); // Filter deleted tasks in memory
       setAllTasks(tasksData);
     });
 
@@ -68,6 +67,11 @@ const EmployeeDashboard = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Filter projects that have tasks assigned to the current user
+  const userProjects = projects.filter((project) => {
+    return allTasks.some((task) => task.projectId === project.id);
+  });
 
   // Get tasks with unread admin messages
   const getTasksWithUnreadMessages = () => {
@@ -264,7 +268,7 @@ const EmployeeDashboard = () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-6">My Projects</h2>
 
         {/* Projects Grid */}
-        {projects.length === 0 ? (
+        {userProjects.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <p className="text-gray-500 text-lg">
               You are not assigned to any projects yet
@@ -272,7 +276,7 @@ const EmployeeDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
+            {userProjects.map((project) => (
               <div
                 key={project.id}
                 onClick={() => navigate(`/employee/project/${project.id}`)}
