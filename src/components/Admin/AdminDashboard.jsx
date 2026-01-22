@@ -198,7 +198,9 @@ const AdminDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Message with Notifications - Hidden on mobile when swiped */}
-        <div className={`bg-white rounded-lg shadow-sm p-4 mb-6 transition-all duration-700 ease-in-out transform ${!showWelcome ? 'md:block hidden opacity-0 scale-95 -translate-y-4' : 'opacity-100 scale-100 translate-y-0'}`}>
+        <div
+          className={`bg-white rounded-lg shadow-sm p-4 mb-6 transition-all duration-700 ease-in-out transform ${!showWelcome ? "md:block hidden opacity-0 scale-95 -translate-y-4" : "opacity-100 scale-100 translate-y-0"}`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-dimo-blue">
@@ -388,7 +390,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Mobile Swipeable Container */}
-        <div 
+        <div
           ref={scrollContainerRef}
           className="md:hidden overflow-x-auto snap-x snap-mandatory flex space-x-4 pb-4 scrollbar-hide"
         >
