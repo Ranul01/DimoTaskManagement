@@ -162,32 +162,40 @@ const EmployeeTaskHistory = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <button
-            onClick={() => navigate("/employee")}
-            className="mb-4 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group touch-manipulation"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 sm:h-6 sm:w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Compact Header */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/employee")}
+              className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+              title="Back to Dashboard"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-          </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-dimo-blue">My Task History</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
-            View your deleted tasks ({filteredTasks.length} total)
-          </p>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                My Task History
+              </h1>
+              <p className="text-gray-500 text-xs mt-0.5">
+                {filteredTasks.length} deleted task(s)
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Collapsible Filters */}

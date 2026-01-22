@@ -133,29 +133,29 @@ const EmployeeDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Message with Notifications */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Compact Welcome Header */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-dimo-blue">
-                Welcome back, {userName}!
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                Welcome back,
               </h1>
-              <p className="text-gray-600 mt-2">
-                Here are the projects you're working on
+              <p className="text-gray-500 text-xs mt-0.5">
+                Your active projects
               </p>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {/* History Button */}
               <button
                 onClick={() => navigate("/employee/history")}
-                className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
                 title="View Task History"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-700"
+                  className="h-5 w-5 text-gray-700"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -173,11 +173,11 @@ const EmployeeDashboard = () => {
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                  className="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-gray-700"
+                    className="h-5 w-5 text-gray-700"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -190,9 +190,8 @@ const EmployeeDashboard = () => {
                     />
                   </svg>
 
-                  {/* Notification Badge */}
                   {totalUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {totalUnread > 9 ? "9+" : totalUnread}
                     </span>
                   )}

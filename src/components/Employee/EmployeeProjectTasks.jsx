@@ -122,48 +122,52 @@ const EmployeeProjectTasks = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button with Icon */}
-        <button
-          onClick={() => navigate("/employee")}
-          className="mb-6 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-        </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Compact Header */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <button
+                onClick={() => navigate("/employee")}
+                className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                title="Back to Dashboard"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+              </button>
 
-        {/* Project Header with Three Dot Menu */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8 relative">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-dimo-blue">
-                {project?.name}
-              </h1>
-              <p className="text-gray-600 mt-2">Employee Tasks</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                  {project?.name}
+                </h1>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  {getViewTitle()}
+                </p>
+              </div>
             </div>
 
             {/* Three Dot Menu */}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={handleMenuToggle}
-                className="bg-gray-100 text-gray-600 p-2 rounded-full hover:bg-gray-200 active:bg-gray-300 transition duration-200 touch-manipulation"
-                title="Options"
+                className="bg-gray-100 text-gray-600 p-2 rounded-full hover:bg-gray-200 transition duration-200"
+                title="View Options"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
+                  className="h-5 w-5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -178,46 +182,18 @@ const EmployeeProjectTasks = () => {
               </button>
 
               {showMenu && (
-                <div
-                  className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-30"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* My Tasks View - Commented Out */}
-                  {/* <button
-                    onClick={() => handleViewChange("my-tasks")}
-                    className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
-                      currentView === "my-tasks"
-                        ? "bg-blue-50 text-dimo-blue"
-                        : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
-                    }`}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                      />
-                    </svg>
-                    <span>My Tasks</span>
-                  </button> */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-30">
                   <button
                     onClick={() => handleViewChange("area")}
-                    className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 ${
                       currentView === "area"
                         ? "bg-blue-50 text-dimo-blue"
-                        : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 flex-shrink-0"
+                      className="h-4 w-4"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -233,15 +209,15 @@ const EmployeeProjectTasks = () => {
                   </button>
                   <button
                     onClick={() => handleViewChange("user")}
-                    className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 ${
                       currentView === "user"
                         ? "bg-blue-50 text-dimo-blue"
-                        : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 flex-shrink-0"
+                      className="h-4 w-4"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -261,15 +237,7 @@ const EmployeeProjectTasks = () => {
           </div>
         </div>
 
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{getViewTitle()}</h2>
-        </div>
-
-        {/* My Tasks View - Commented Out */}
-        {/* {currentView === "my-tasks" && (
-          <MyTasksView tasks={tasks} navigate={navigate} getStatusColor={getStatusColor} />
-        )} */}
-
+        {/* View Components - Keep existing */}
         {currentView === "area" && (
           <AreaWiseView
             projectId={projectId}
@@ -1246,10 +1214,9 @@ export default EmployeeProjectTasks;
 //               strokeLinejoin="round"
 //               strokeWidth={2}
 //               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-//             />
-//           </svg>
-//           <p className="text-gray-500 text-lg">No tasks assigned</p>
-//         </div>
+//           />
+//         </svg>
+//         <p className="text-gray-500 text-lg">No tasks assigned</p>
 //       ) : (
 //         <div className="space-y-3">
 //           <h3 className="text-xl font-semibold text-gray-800 mb-4">
