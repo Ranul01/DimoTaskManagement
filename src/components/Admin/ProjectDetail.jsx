@@ -167,181 +167,191 @@ const ProjectDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  <div className="min-h-screen bg-gray-50">
+    <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => navigate("/admin")}
-          className="mb-6 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-        </button>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Compact Header - Back Button and Project Name on Same Line */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6 relative">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Back Button + Project Info */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button
+              onClick={() => navigate("/admin")}
+              className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+              title="Back to Dashboard"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+            </button>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8 relative">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-dimo-blue">{project.name}</h1>
-              <p className="text-gray-600 mt-2">
-                Created on {new Date(project.createdAt).toLocaleDateString()}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                {project.name}
+              </h1>
+              <p className="text-gray-500 text-xs mt-0.5">
+                Created {new Date(project.createdAt).toLocaleDateString()}
               </p>
             </div>
+          </div>
 
-            <div className="relative" ref={projectMenuRef}>
-              <button
-                onClick={handleProjectMenuToggle}
-                className="bg-gray-100 text-gray-600 p-2 rounded-full hover:bg-gray-200 active:bg-gray-300 transition duration-200 touch-manipulation"
-                title="Options"
+          {/* Right: Menu Button */}
+          <div className="relative flex-shrink-0" ref={projectMenuRef}>
+            <button
+              onClick={handleProjectMenuToggle}
+              className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition duration-200"
+              title="Options"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                  />
-                </svg>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                />
+              </svg>
+            </button>
 
-              {showProjectMenu && (
-                <div
-                  className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-30"
-                  onClick={(e) => e.stopPropagation()}
+            {showProjectMenu && (
+              <div
+                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-30"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => handleViewChange("area")}
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 ${
+                    currentView === "area"
+                      ? "bg-blue-50 text-dimo-blue"
+                      : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                  }`}
                 >
-                  <button
-                    onClick={() => handleViewChange("area")}
-                    className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
-                      currentView === "area"
-                        ? "bg-blue-50 text-dimo-blue"
-                        : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
-                    }`}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                      />
-                    </svg>
-                    <span>Area wise</span>
-                  </button>
-                  <button
-                    onClick={() => handleViewChange("user")}
-                    className={`w-full text-left px-4 py-3 text-base flex items-center space-x-3 touch-manipulation ${
-                      currentView === "user"
-                        ? "bg-blue-50 text-dimo-blue"
-                        : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
-                    }`}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                    />
+                  </svg>
+                  <span>Area wise</span>
+                </button>
+                <button
+                  onClick={() => handleViewChange("user")}
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 ${
+                    currentView === "user"
+                      ? "bg-blue-50 text-dimo-blue"
+                      : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                  }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                      />
-                    </svg>
-                    <span>User wise</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                  <span>User wise</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{getViewTitle()}</h2>
-          {currentView === "area" && (
-            <button
-              onClick={() => setShowCreateTaskModal(true)}
-              className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
-            >
-              <span className="text-xl">+</span>
-              <span>Add New Area</span>
-            </button>
-          )}
-          {currentView !== "area" && (
-            <button
-              onClick={() => setShowCreateTaskModal(true)}
-              className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
-            >
-              <span className="text-xl">+</span>
-              <span>Add New Task</span>
-            </button>
-          )}
-        </div>
-
+      {/* View Title and Add Button */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">{getViewTitle()}</h2>
         {currentView === "area" && (
-          <AreaWiseView
-            projectId={projectId}
-            areas={areas}
-            setAreas={setAreas}
-            tasks={tasks}
-            setTasks={setTasks}
-            allEmployeesMap={allEmployeesMap}
-            navigate={navigate}
-          />
+          <button
+            onClick={() => setShowCreateTaskModal(true)}
+            className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+          >
+            <span className="text-lg">+</span>
+            <span className=" sm:inline">Add Area</span>
+          </button>
         )}
-
-        {currentView === "user" && (
-          <UserWiseView
-            employees={employees}
-            projectId={projectId}
-            tasks={tasks}
-            areas={areas}
-            navigate={navigate}
-            allEmployeesMap={allEmployeesMap}
-            getInitials={getInitials}
-          />
+        {currentView !== "area" && (
+          <button
+            onClick={() => setShowCreateTaskModal(true)}
+            className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+          >
+            <span className="text-lg">+</span>
+            <span className=" sm:inline">Add Task</span>
+          </button>
         )}
       </div>
 
-      {showCreateTaskModal && currentView !== "area" && (
-        <CreateTaskModal
+      {/* ...existing view components... */}
+      {currentView === "area" && (
+        <AreaWiseView
           projectId={projectId}
-          project={project}
-          onClose={() => setShowCreateTaskModal(false)}
+          areas={areas}
+          setAreas={setAreas}
+          tasks={tasks}
+          setTasks={setTasks}
+          allEmployeesMap={allEmployeesMap}
+          navigate={navigate}
         />
       )}
 
-      {showCreateTaskModal && currentView === "area" && (
-        <CreateAreaModal
+      {currentView === "user" && (
+        <UserWiseView
+          employees={employees}
           projectId={projectId}
-          onClose={() => setShowCreateTaskModal(false)}
+          tasks={tasks}
+          areas={areas}
+          navigate={navigate}
+          allEmployeesMap={allEmployeesMap}
+          getInitials={getInitials}
         />
       )}
+    </div>
+
+{showCreateTaskModal && currentView !== "area" && (
+  <CreateTaskModal
+    projectId={projectId}
+    project={project}
+    onClose={() => setShowCreateTaskModal(false)}
+  />
+)}
+
+{showCreateTaskModal && currentView === "area" && (
+  <CreateAreaModal
+    projectId={projectId}
+    onClose={() => setShowCreateTaskModal(false)}
+  />
+)}
     </div>
   );
 };
@@ -1030,33 +1040,70 @@ const UserWiseView = ({
                           const statusInfo = getStatusInfo(task.status, task.approved);
 
                           return (
-                            <div
-                              key={task.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(
-                                  `/admin/project/${projectId}/employee/${employee.id}`
-                                );
-                              }}
-                              className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-dimo-blue"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <h5 className="text-sm font-semibold text-gray-800">
-                                    {task.name}
-                                  </h5>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Area: <span className="font-medium text-dimo-blue">
-                                      {getAreaName(task.areaIds)}
-                                    </span>
-                                  </p>
-                                </div>
-                                <div className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}>
-                                  {statusInfo.label}
-                                </div>
-                              </div>
-                            </div>
-                          );
+  <div
+    key={task.id}
+    onClick={(e) => {
+      e.stopPropagation();
+      navigate(
+        `/admin/project/${projectId}/employee/${employee.id}`
+      );
+    }}
+    className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-dimo-blue"
+  >
+    <div className="flex items-start justify-between gap-2">
+      <div className="flex-1 min-w-0">
+        <h5 className="text-sm font-semibold text-gray-800 mb-2">
+          {task.name}
+        </h5>
+        
+        {/* Display all areas */}
+        {task.areaIds && task.areaIds.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {task.areaIds.map((areaId) => {
+              const area = areas.find((a) => a.id === areaId);
+              if (!area) return null;
+              
+              return (
+                <div
+                  key={areaId}
+                  className="flex items-center space-x-1 bg-blue-50 rounded-full px-2 py-0.5 border border-blue-200"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3 w-3 text-dimo-blue flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  <span className="text-xs font-medium text-dimo-blue">
+                    {area.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      
+      <div className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}>
+        {statusInfo.label}
+      </div>
+    </div>
+  </div>
+);
                         })}
                       </div>
                     )}

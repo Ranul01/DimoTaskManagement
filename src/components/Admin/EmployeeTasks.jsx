@@ -174,18 +174,62 @@ const EmployeeTasks = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  <div className="min-h-screen bg-gray-50">
+    <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Compact Header - Back Button and Project/Employee Info on Same Line */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(`/admin/project/${projectId}`)}
+            className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+            title="Back to Project"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-semibold text-dimo-blue truncate">
+              {project?.name}
+            </h1>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Tasks for: <span className="font-medium text-gray-700">{employee?.name}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Create Task Button */}
+      <div className="flex justify-end mb-6">
         <button
-          onClick={() => navigate(`/admin/project/${projectId}`)}
-          className="mb-6 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group"
+          onClick={() => setShowCreateModal(true)}
+          className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
         >
+          <span className="text-lg">+</span>
+          <span className="hidden sm:inline">Add New Task</span>
+        </button>
+      </div>
+
+      {/* Tasks Cards */}
+      {tasks.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
+            className="h-16 w-16 mx-auto text-gray-400 mb-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -194,85 +238,61 @@ const EmployeeTasks = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
             />
           </svg>
-        </button>
-
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-2xl font-bold text-dimo-blue">{project?.name}</h1>
-          <p className="text-lg text-gray-700 mt-2">
-            Tasks for: <span className="font-semibold">{employee?.name}</span>
-          </p>
+          <p className="text-gray-500 text-lg">No tasks assigned yet</p>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tasks.map((task) => {
+            const areaNames = getAreaNames(task.areaIds);
 
-        {/* Create Task Button */}
-        <div className="flex justify-end mb-6">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-dimo-blue text-white px-6 py-3 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
-          >
-            <span className="text-xl">+</span>
-            <span>Add New Task</span>
-          </button>
-        </div>
-
-        {/* Tasks Cards */}
-        {tasks.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-500 text-lg">No tasks assigned yet</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tasks.map((task) => {
-              const areaNames = getAreaNames(task.areaIds);
-
-              return (
-                <div
-                  key={task.id}
-                  className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
-                >
-                  {/* Card Header */}
-                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
-                    <h3 className="text-lg font-bold text-white truncate">
-                      {task.name}
-                    </h3>
-                    {areaNames.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {areaNames.map((areaName, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
+            return (
+              <div
+                key={task.id}
+                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
+              >
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
+                  <h3 className="text-lg font-bold text-white truncate">
+                    {task.name}
+                  </h3>
+                  {areaNames.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {areaNames.map((areaName, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3 text-blue-100"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 text-blue-100"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            <span className="text-xs text-white font-medium">
-                              {areaName}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <span className="text-xs text-white font-medium">
+                            {areaName}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                   {/* Card Body */}
                   <div className="p-4 space-y-3">

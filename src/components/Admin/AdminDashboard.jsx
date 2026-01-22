@@ -25,9 +25,11 @@ const AdminDashboard = () => {
   const [editingProject, setEditingProject] = useState(null);
   const [userName, setUserName] = useState("");
   const [activeView, setActiveView] = useState("projects");
+  const [showWelcome, setShowWelcome] = useState(true);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const notificationRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const getUserName = async () => {
@@ -59,7 +61,6 @@ const AdminDashboard = () => {
       setEmployees(employeesData);
     });
 
-    // Update tasks query to exclude deleted tasks
     const tasksQuery = query(
       collection(db, "tasks"),
       where("deleted", "!=", true),
@@ -91,6 +92,23 @@ const AdminDashboard = () => {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Detect scroll on mobile swipe container
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        const scrollLeft = scrollContainerRef.current.scrollLeft;
+        // Hide welcome section when scrolled more than 50px
+        setShowWelcome(scrollLeft < 50);
+      }
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
   }, []);
 
   const getEmployeeTaskSummary = (employeeId) => {
@@ -179,29 +197,29 @@ const AdminDashboard = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Message with Notifications */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        {/* Welcome Message with Notifications - Hidden on mobile when swiped */}
+        <div className={`bg-white rounded-lg shadow-sm p-4 mb-6 transition-all duration-700 ease-in-out transform ${!showWelcome ? 'md:block hidden opacity-0 scale-95 -translate-y-4' : 'opacity-100 scale-100 translate-y-0'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-dimo-blue">
-                Welcome back, {userName}!
+              <h1 className="text-xl font-semibold text-dimo-blue">
+                Welcome back
               </h1>
-              <p className="text-gray-600 mt-2">
-                Manage your projects and tasks efficiently
+              <p className="text-gray-500 text-sm mt-0.5">
+                Manage your projects and tasks
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {/* History Button - Mobile Only */}
               <button
                 onClick={() => navigate("/admin/history")}
-                className="md:hidden p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                className="md:hidden p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
                 title="View Task History"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-700"
+                  className="h-5 w-5 text-gray-700"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -219,11 +237,11 @@ const AdminDashboard = () => {
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                  className="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-gray-700"
+                    className="h-5 w-5 text-gray-700"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -238,7 +256,7 @@ const AdminDashboard = () => {
 
                   {/* Notification Badge */}
                   {totalUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {totalUnread > 9 ? "9+" : totalUnread}
                     </span>
                   )}
@@ -370,7 +388,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Mobile Swipeable Container */}
-        <div className="md:hidden overflow-x-auto snap-x snap-mandatory flex space-x-4 pb-4 scrollbar-hide">
+        <div 
+          ref={scrollContainerRef}
+          className="md:hidden overflow-x-auto snap-x snap-mandatory flex space-x-4 pb-4 scrollbar-hide"
+        >
           <div className="snap-center shrink-0 w-full">
             <ProjectsView
               projects={projects}
