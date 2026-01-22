@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import Navbar from "../Layout/Navbar";
 
@@ -73,14 +79,14 @@ const TaskHistory = () => {
     // Filter by task name
     if (filters.taskName) {
       filtered = filtered.filter((task) =>
-        task.name.toLowerCase().includes(filters.taskName.toLowerCase())
+        task.name.toLowerCase().includes(filters.taskName.toLowerCase()),
       );
     }
 
     // Filter by assignee
     if (filters.assignee) {
       filtered = filtered.filter((task) =>
-        task.assignedTo?.includes(filters.assignee)
+        task.assignedTo?.includes(filters.assignee),
       );
     }
 
@@ -92,13 +98,13 @@ const TaskHistory = () => {
     // Filter by date range
     if (filters.startDate) {
       filtered = filtered.filter(
-        (task) => new Date(task.deletedAt) >= new Date(filters.startDate)
+        (task) => new Date(task.deletedAt) >= new Date(filters.startDate),
       );
     }
 
     if (filters.endDate) {
       filtered = filtered.filter(
-        (task) => new Date(task.deletedAt) <= new Date(filters.endDate)
+        (task) => new Date(task.deletedAt) <= new Date(filters.endDate),
       );
     }
 
@@ -238,7 +244,9 @@ const TaskHistory = () => {
                   d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                 />
               </svg>
-              <h2 className="text-sm font-semibold text-gray-800">Filters & Sort</h2>
+              <h2 className="text-sm font-semibold text-gray-800">
+                Filters & Sort
+              </h2>
             </div>
             <div className="flex items-center space-x-3">
               {showFilters && (
@@ -282,7 +290,9 @@ const TaskHistory = () => {
                   <input
                     type="text"
                     value={filters.taskName}
-                    onChange={(e) => handleFilterChange("taskName", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("taskName", e.target.value)
+                    }
                     placeholder="Search..."
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   />
@@ -295,7 +305,9 @@ const TaskHistory = () => {
                   </label>
                   <select
                     value={filters.assignee}
-                    onChange={(e) => handleFilterChange("assignee", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("assignee", e.target.value)
+                    }
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   >
                     <option value="">All Employees</option>
@@ -314,7 +326,9 @@ const TaskHistory = () => {
                   </label>
                   <select
                     value={filters.project}
-                    onChange={(e) => handleFilterChange("project", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("project", e.target.value)
+                    }
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   >
                     <option value="">All Projects</option>
@@ -334,8 +348,10 @@ const TaskHistory = () => {
                   <input
                     type="date"
                     value={filters.startDate}
-                    onChange={(e) => handleFilterChange("startDate", e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
+                    onChange={(e) =>
+                      handleFilterChange("startDate", e.target.value)
+                    }
+                    className="w-full px-0.3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   />
                 </div>
 
@@ -347,8 +363,10 @@ const TaskHistory = () => {
                   <input
                     type="date"
                     value={filters.endDate}
-                    onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
+                    onChange={(e) =>
+                      handleFilterChange("endDate", e.target.value)
+                    }
+                    className="w-full px-0.3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   />
                 </div>
 
@@ -482,8 +500,9 @@ const TaskHistory = () => {
                           />
                         </svg>
                         <span className="text-xs text-gray-700 truncate">
-                          {task.assignedTo?.map((empId) => getEmployeeName(empId)).join(", ") ||
-                            "Unassigned"}
+                          {task.assignedTo
+                            ?.map((empId) => getEmployeeName(empId))
+                            .join(", ") || "Unassigned"}
                         </span>
                       </div>
                     </div>
@@ -520,7 +539,7 @@ const TaskHistory = () => {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span
                             className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${getStatusBadgeClass(
-                              task.status
+                              task.status,
                             )}`}
                           >
                             {task.status.replace("-", " ").toUpperCase()}

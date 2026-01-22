@@ -1,7 +1,7 @@
 {
   "name": "Task Manager",
-  "short_name": "Tasks Manager",
-  "description": "Professional task management system",
+  "short_name": "Tasks",
+  "description": "Professional task management system for efficient project handling.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,13 +9,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/new-email.png",
+      "src": "/appicon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/notification-bell.png",
+      "src": "/appicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
