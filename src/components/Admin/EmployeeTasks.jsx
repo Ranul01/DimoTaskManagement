@@ -38,7 +38,7 @@ const EmployeeTasks = () => {
           console.log("Project data loaded:", projectData);
           console.log("Project areas:", projectData.areas);
         }
-      }
+      },
     );
 
     // Fetch employee details
@@ -56,7 +56,7 @@ const EmployeeTasks = () => {
     const q = query(
       collection(db, "tasks"),
       where("projectId", "==", projectId),
-      where("assignedTo", "array-contains", employeeId)
+      where("assignedTo", "array-contains", employeeId),
     );
 
     const unsubscribeTasks = onSnapshot(q, (snapshot) => {
@@ -174,21 +174,65 @@ const EmployeeTasks = () => {
   };
 
   return (
-  <div className="min-h-screen bg-gray-50">
-    <Navbar />
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
 
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Compact Header - Back Button and Project/Employee Info on Same Line */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Compact Header - Back Button and Project/Employee Info on Same Line */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/admin/project/${projectId}`)}
+              className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+              title="Back to Project"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                {project?.name}
+              </h1>
+              <p className="text-gray-500 text-xs mt-0.5">
+                Tasks for:{" "}
+                <span className="font-medium text-gray-700">
+                  {employee?.name}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Task Button */}
+        <div className="flex justify-end mb-6">
           <button
-            onClick={() => navigate(`/admin/project/${projectId}`)}
-            className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
-            title="Back to Project"
+            onClick={() => setShowCreateModal(true)}
+            className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
           >
+            <span className="text-lg">+</span>
+            <span className="hidden sm:inline">Add New Task</span>
+          </button>
+        </div>
+
+        {/* Tasks Cards */}
+        {tasks.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
+              className="h-16 w-16 mx-auto text-gray-400 mb-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -197,102 +241,61 @@ const EmployeeTasks = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
               />
             </svg>
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-semibold text-dimo-blue truncate">
-              {project?.name}
-            </h1>
-            <p className="text-gray-500 text-xs mt-0.5">
-              Tasks for: <span className="font-medium text-gray-700">{employee?.name}</span>
-            </p>
+            <p className="text-gray-500 text-lg">No tasks assigned yet</p>
           </div>
-        </div>
-      </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tasks.map((task) => {
+              const areaNames = getAreaNames(task.areaIds);
 
-      {/* Create Task Button */}
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
-        >
-          <span className="text-lg">+</span>
-          <span className="hidden sm:inline">Add New Task</span>
-        </button>
-      </div>
-
-      {/* Tasks Cards */}
-      {tasks.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 mx-auto text-gray-400 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <p className="text-gray-500 text-lg">No tasks assigned yet</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tasks.map((task) => {
-            const areaNames = getAreaNames(task.areaIds);
-
-            return (
-              <div
-                key={task.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
-              >
-                {/* Card Header */}
-                <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
-                  <h3 className="text-lg font-bold text-white truncate">
-                    {task.name}
-                  </h3>
-                  {areaNames.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {areaNames.map((areaName, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3 text-blue-100"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+              return (
+                <div
+                  key={task.id}
+                  className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
+                >
+                  {/* Card Header */}
+                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
+                    <h3 className="text-lg font-bold text-white truncate">
+                      {task.name}
+                    </h3>
+                    {areaNames.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {areaNames.map((areaName, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          <span className="text-xs text-white font-medium">
-                            {areaName}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3 w-3 text-blue-100"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            <span className="text-xs text-white font-medium">
+                              {areaName}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Card Body */}
                   <div className="p-4 space-y-3">
@@ -495,31 +498,6 @@ const EmployeeTasks = () => {
                             </button>
                           </>
                         )}
-
-                        {/* Delete button */}
-                        {/* {task.approved && (
-                          <button
-                            onClick={() => handleDeleteTask(task.id, task.name)}
-                            className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 rounded hover:bg-red-50 transition text-sm"
-                            title="Delete task"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            <span>Delete</span>
-                          </button>
-                        )} */}
                       </div>
                     </div>
                   </div>
@@ -651,9 +629,15 @@ const RejectTaskModal = ({ taskId, onClose }) => {
   );
 };
 
+// EDIT TASK MODAL - FIXED FOR iPHONE COMPATIBILITY
 const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
   const formatDateForInput = (isoString) => {
     return new Date(isoString).toISOString().split("T")[0];
+  };
+
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
   };
 
   const [taskData, setTaskData] = useState({
@@ -687,6 +671,24 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
     };
     fetchAllEmployees();
   }, [projectId]);
+
+  // Prevent body scroll when modal is open (iOS fix)
+  useEffect(() => {
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const toggleEmployee = (empId) => {
     setSelectedEmployees((prev) => {
@@ -750,221 +752,303 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-dimo-blue text-white p-6 rounded-t-lg">
-          <h2 className="text-2xl font-bold">Edit Task</h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task Name
-            </label>
-            <input
-              type="text"
-              value={taskData.name}
-              onChange={(e) =>
-                setTaskData({ ...taskData, name: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
-              placeholder="Enter task name"
-              required
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task Details
-            </label>
-            <textarea
-              value={taskData.details}
-              onChange={(e) =>
-                setTaskData({ ...taskData, details: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none resize-none"
-              placeholder="Enter task details or description..."
-              rows="4"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Optional: Provide additional information about this task
-            </p>
-          </div>
-
-          {/* Area Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Area(s) <span className="text-red-600">*</span>
-            </label>
-            {projectAreas && projectAreas.length > 0 ? (
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
-                {projectAreas.map((area) => (
-                  <div
-                    key={area.id}
-                    onClick={() => toggleArea(area.id)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 ${
-                      selectedAreas.includes(area.id) ? "bg-blue-50" : ""
-                    }`}
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-hidden">
+      <div className="h-full w-full overflow-y-auto overscroll-contain">
+        <div className="min-h-full flex items-start sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:rounded-lg sm:max-w-2xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col">
+            {/* Fixed Header - iOS Compatible */}
+            <div className="bg-dimo-blue text-white p-4 sm:p-6 flex-shrink-0 relative z-10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl sm:text-2xl font-bold">Edit Task</h2>
+                <button
+                  onClick={onClose}
+                  className="text-white hover:text-gray-200 p-2 -mr-2"
+                  type="button"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-dimo-blue"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        <span className="text-sm font-medium">{area.name}</span>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedAreas.includes(area.id)
-                            ? "bg-dimo-blue border-dimo-blue"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {selectedAreas.includes(area.id) && (
-                          <span className="text-white text-xs">✓</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
               </div>
-            ) : (
-              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
-                <p className="text-sm text-gray-600">
-                  No areas available for this project.
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Add areas from the Project Details page (Three-dot menu → Area
-                  wise)
-                </p>
-              </div>
-            )}
-            {projectAreas && projectAreas.length > 0 && (
-              <p className="text-xs text-gray-500 mt-2">
-                {selectedAreas.length} area(s) selected
-              </p>
-            )}
-          </div>
+            </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assign to Employees <span className="text-red-600">*</span>
-            </label>
-            <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
-              {allEmployees.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No employees available
+            {/* Scrollable Form Content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+                {/* Task Name */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Task Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={taskData.name}
+                    onChange={(e) =>
+                      setTaskData({ ...taskData, name: e.target.value })
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-base"
+                    placeholder="Enter task name"
+                    required
+                  />
                 </div>
-              ) : (
-                allEmployees.map((emp) => (
-                  <div
-                    key={emp.id}
-                    onClick={() => toggleEmployee(emp.id)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 ${
-                      selectedEmployees.includes(emp.id) ? "bg-blue-50" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-medium">{emp.name}</span>
-                        <p className="text-xs text-gray-500">{emp.email}</p>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedEmployees.includes(emp.id)
-                            ? "bg-dimo-blue border-dimo-blue"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {selectedEmployees.includes(emp.id) && (
-                          <span className="text-white text-xs">✓</span>
-                        )}
-                      </div>
-                    </div>
+
+                {/* Task Details */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Task Details
+                  </label>
+                  <textarea
+                    value={taskData.details}
+                    onChange={(e) =>
+                      setTaskData({ ...taskData, details: e.target.value })
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none resize-none text-base"
+                    placeholder="Enter task details or description..."
+                    rows="4"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optional: Provide additional information about this task
+                  </p>
+                </div>
+
+                {/* Date Inputs - iOS Optimized */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Creation Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={taskData.createdDate}
+                      onChange={(e) =>
+                        setTaskData({
+                          ...taskData,
+                          createdDate: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-base appearance-none touch-manipulation"
+                      required
+                      style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        minHeight: "44px",
+                        backgroundColor: "#ffffff",
+                      }}
+                    />
                   </div>
-                ))
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {selectedEmployees.length} employee(s) selected
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Creation Date
-              </label>
-              <input
-                type="date"
-                value={taskData.createdDate}
-                onChange={(e) =>
-                  setTaskData({ ...taskData, createdDate: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
-                required
-              />
-            </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={taskData.targetDate}
+                      onChange={(e) =>
+                        setTaskData({ ...taskData, targetDate: e.target.value })
+                      }
+                      min={taskData.createdDate || getTodayDate()}
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-base appearance-none touch-manipulation"
+                      required
+                      style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        minHeight: "44px",
+                        backgroundColor: "#ffffff",
+                      }}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Date
-              </label>
-              <input
-                type="date"
-                value={taskData.targetDate}
-                onChange={(e) =>
-                  setTaskData({ ...taskData, targetDate: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
-                required
-              />
+                {/* Area Selection */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Area(s) <span className="text-red-600">*</span>
+                  </label>
+                  {projectAreas && projectAreas.length > 0 ? (
+                    <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto">
+                      {projectAreas.map((area) => (
+                        <div
+                          key={area.id}
+                          onClick={() => toggleArea(area.id)}
+                          className={`p-3 cursor-pointer active:bg-gray-100 border-b border-gray-200 last:border-b-0 transition-colors ${
+                            selectedAreas.includes(area.id)
+                              ? "bg-blue-50"
+                              : "bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-dimo-blue flex-shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                              <span className="text-sm font-medium truncate">
+                                {area.name}
+                              </span>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-2 ${
+                                selectedAreas.includes(area.id)
+                                  ? "bg-dimo-blue border-dimo-blue"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {selectedAreas.includes(area.id) && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="3"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path d="M5 13l4 4L19 7"></path>
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
+                      <p className="text-sm text-gray-600">
+                        No areas available for this project.
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Add areas from the Project Details page (Three-dot menu
+                        → Area wise)
+                      </p>
+                    </div>
+                  )}
+                  {projectAreas && projectAreas.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {selectedAreas.length} area(s) selected
+                    </p>
+                  )}
+                </div>
+
+                {/* Assign to Employees */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assign to Employees <span className="text-red-600">*</span>
+                  </label>
+                  <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto">
+                    {allEmployees.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500 text-sm">
+                        No employees available
+                      </div>
+                    ) : (
+                      allEmployees.map((emp) => (
+                        <div
+                          key={emp.id}
+                          onClick={() => toggleEmployee(emp.id)}
+                          className={`p-3 cursor-pointer active:bg-gray-100 border-b border-gray-200 last:border-b-0 transition-colors ${
+                            selectedEmployees.includes(emp.id)
+                              ? "bg-blue-50"
+                              : "bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0 mr-2">
+                              <span className="text-sm font-medium block truncate">
+                                {emp.name}
+                              </span>
+                              <p className="text-xs text-gray-500 truncate">
+                                {emp.email}
+                              </p>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                selectedEmployees.includes(emp.id)
+                                  ? "bg-dimo-blue border-dimo-blue"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {selectedEmployees.includes(emp.id) && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="3"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path d="M5 13l4 4L19 7"></path>
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {selectedEmployees.length} employee(s) selected
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full sm:w-auto px-5 py-2.5 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition text-base font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      selectedEmployees.length === 0 ||
+                      selectedAreas.length === 0
+                    }
+                    className="w-full sm:w-auto px-5 py-2.5 sm:py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark active:bg-dimo-dark transition disabled:opacity-50 disabled:cursor-not-allowed text-base font-medium"
+                  >
+                    {loading ? "Updating..." : "Update Task"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={
-                loading ||
-                selectedEmployees.length === 0 ||
-                selectedAreas.length === 0
-              }
-              className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
-            >
-              {loading ? "Updating..." : "Update Task"}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
+// CREATE TASK MODAL - FIXED FOR iPHONE COMPATIBILITY
 const CreateTaskModal = ({
   projectId,
   employeeId,
@@ -988,7 +1072,6 @@ const CreateTaskModal = ({
   const [selectedEmployees, setSelectedEmployees] = useState([employeeId]);
   const [selectedAreas, setSelectedAreas] = useState([]);
 
-  // Debug: Log projectAreas when component mounts
   useEffect(() => {
     console.log("CreateTaskModal - projectAreas received:", projectAreas);
     console.log("CreateTaskModal - projectAreas length:", projectAreas?.length);
@@ -1012,6 +1095,24 @@ const CreateTaskModal = ({
     };
     fetchAllEmployees();
   }, [projectId]);
+
+  // Prevent body scroll when modal is open (iOS fix)
+  useEffect(() => {
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1079,216 +1180,299 @@ const CreateTaskModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-dimo-blue text-white p-6 rounded-t-lg">
-          <h2 className="text-2xl font-bold">Create New Task</h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task Name
-            </label>
-            <input
-              type="text"
-              value={taskData.name}
-              onChange={(e) =>
-                setTaskData({ ...taskData, name: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
-              placeholder="Enter task name"
-              required
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task Details
-            </label>
-            <textarea
-              value={taskData.details}
-              onChange={(e) =>
-                setTaskData({ ...taskData, details: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none resize-none"
-              placeholder="Enter task details or description..."
-              rows="4"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Optional: Provide additional information about this task
-            </p>
-          </div>
-
-          {/* Area Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Area(s) <span className="text-red-600">*</span>
-            </label>
-            {projectAreas && projectAreas.length > 0 ? (
-              <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
-                {projectAreas.map((area) => (
-                  <div
-                    key={area.id}
-                    onClick={() => toggleArea(area.id)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 ${
-                      selectedAreas.includes(area.id) ? "bg-blue-50" : ""
-                    }`}
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-hidden">
+      <div className="h-full w-full overflow-y-auto overscroll-contain">
+        <div className="min-h-full flex items-start sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:rounded-lg sm:max-w-2xl h-screen sm:h-auto sm:max-h-[90vh] flex flex-col">
+            {/* Fixed Header - iOS Compatible */}
+            <div className="bg-dimo-blue text-white p-4 sm:p-6 flex-shrink-0 relative z-10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  Create New Task
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="text-white hover:text-gray-200 p-2 -mr-2"
+                  type="button"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-dimo-blue"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        <span className="text-sm font-medium">{area.name}</span>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedAreas.includes(area.id)
-                            ? "bg-dimo-blue border-dimo-blue"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {selectedAreas.includes(area.id) && (
-                          <span className="text-white text-xs">✓</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
               </div>
-            ) : (
-              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
-                <p className="text-sm text-gray-600">
-                  No areas available for this project.
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Add areas from the Project Details page (Three-dot menu → Area
-                  wise)
-                </p>
-              </div>
-            )}
-            {projectAreas && projectAreas.length > 0 && (
-              <p className="text-xs text-gray-500 mt-2">
-                {selectedAreas.length} area(s) selected
-              </p>
-            )}
-          </div>
+            </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assign to Employees <span className="text-red-600">*</span>
-            </label>
-            <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
-              {allEmployees.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No employees available
+            {/* Scrollable Form Content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+                {/* Task Name */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Task Name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={taskData.name}
+                    onChange={(e) =>
+                      setTaskData({ ...taskData, name: e.target.value })
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-base"
+                    placeholder="Enter task name"
+                    required
+                  />
                 </div>
-              ) : (
-                allEmployees.map((emp) => (
-                  <div
-                    key={emp.id}
-                    onClick={() => toggleEmployee(emp.id)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-b-0 ${
-                      selectedEmployees.includes(emp.id) ? "bg-blue-50" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-medium">{emp.name}</span>
-                        <p className="text-xs text-gray-500">{emp.email}</p>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedEmployees.includes(emp.id)
-                            ? "bg-dimo-blue border-dimo-blue"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {selectedEmployees.includes(emp.id) && (
-                          <span className="text-white text-xs">✓</span>
-                        )}
-                      </div>
-                    </div>
+
+                {/* Task Details */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Task Details
+                  </label>
+                  <textarea
+                    value={taskData.details}
+                    onChange={(e) =>
+                      setTaskData({ ...taskData, details: e.target.value })
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none resize-none text-base"
+                    placeholder="Enter task details or description..."
+                    rows="4"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optional: Provide additional information about this task
+                  </p>
+                </div>
+
+                {/* Date Inputs - iOS Optimized */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Creation Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={taskData.createdDate}
+                      onChange={(e) =>
+                        setTaskData({
+                          ...taskData,
+                          createdDate: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-base appearance-none touch-manipulation"
+                      required
+                      style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        minHeight: "44px",
+                        backgroundColor: "#ffffff",
+                      }}
+                    />
                   </div>
-                ))
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {selectedEmployees.length} employee(s) selected
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Creation Date
-              </label>
-              <input
-                type="date"
-                value={taskData.createdDate}
-                onChange={(e) =>
-                  setTaskData({ ...taskData, createdDate: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
-                required
-              />
-            </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={taskData.targetDate}
+                      onChange={(e) =>
+                        setTaskData({ ...taskData, targetDate: e.target.value })
+                      }
+                      min={taskData.createdDate || getTodayDate()}
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-base appearance-none touch-manipulation"
+                      required
+                      style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        minHeight: "44px",
+                        backgroundColor: "#ffffff",
+                      }}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Date
-              </label>
-              <input
-                type="date"
-                value={taskData.targetDate}
-                onChange={(e) =>
-                  setTaskData({ ...taskData, targetDate: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
-                required
-              />
+                {/* Area Selection */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Area(s) <span className="text-red-600">*</span>
+                  </label>
+                  {projectAreas && projectAreas.length > 0 ? (
+                    <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto">
+                      {projectAreas.map((area) => (
+                        <div
+                          key={area.id}
+                          onClick={() => toggleArea(area.id)}
+                          className={`p-3 cursor-pointer active:bg-gray-100 border-b border-gray-200 last:border-b-0 transition-colors ${
+                            selectedAreas.includes(area.id)
+                              ? "bg-blue-50"
+                              : "bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-dimo-blue flex-shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                              <span className="text-sm font-medium truncate">
+                                {area.name}
+                              </span>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-2 ${
+                                selectedAreas.includes(area.id)
+                                  ? "bg-dimo-blue border-dimo-blue"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {selectedAreas.includes(area.id) && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="3"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path d="M5 13l4 4L19 7"></path>
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
+                      <p className="text-sm text-gray-600">
+                        No areas available for this project.
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Add areas from the Project Details page (Three-dot menu
+                        → Area wise)
+                      </p>
+                    </div>
+                  )}
+                  {projectAreas && projectAreas.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {selectedAreas.length} area(s) selected
+                    </p>
+                  )}
+                </div>
+
+                {/* Assign to Employees */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assign to Employees <span className="text-red-600">*</span>
+                  </label>
+                  <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto">
+                    {allEmployees.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500 text-sm">
+                        No employees available
+                      </div>
+                    ) : (
+                      allEmployees.map((emp) => (
+                        <div
+                          key={emp.id}
+                          onClick={() => toggleEmployee(emp.id)}
+                          className={`p-3 cursor-pointer active:bg-gray-100 border-b border-gray-200 last:border-b-0 transition-colors ${
+                            selectedEmployees.includes(emp.id)
+                              ? "bg-blue-50"
+                              : "bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0 mr-2">
+                              <span className="text-sm font-medium block truncate">
+                                {emp.name}
+                              </span>
+                              <p className="text-xs text-gray-500 truncate">
+                                {emp.email}
+                              </p>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                selectedEmployees.includes(emp.id)
+                                  ? "bg-dimo-blue border-dimo-blue"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {selectedEmployees.includes(emp.id) && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="3"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path d="M5 13l4 4L19 7"></path>
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {selectedEmployees.length} employee(s) selected
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full sm:w-auto px-5 py-2.5 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition text-base font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      selectedEmployees.length === 0 ||
+                      selectedAreas.length === 0
+                    }
+                    className="w-full sm:w-auto px-5 py-2.5 sm:py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark active:bg-dimo-dark transition disabled:opacity-50 disabled:cursor-not-allowed text-base font-medium"
+                  >
+                    {loading ? "Creating..." : "Create Task"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={
-                loading ||
-                selectedEmployees.length === 0 ||
-                selectedAreas.length === 0
-              }
-              className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50"
-            >
-              {loading ? "Creating..." : "Create Task"}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
