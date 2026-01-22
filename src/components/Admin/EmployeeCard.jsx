@@ -36,7 +36,6 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
     { name: "On Hold", value: summary.hold, color: COLORS.hold },
   ].filter((item) => item.value > 0);
 
-  // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
 
   const onTouchStart = (e) => {
@@ -54,7 +53,6 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
     const distance = touchStart - touchEnd;
     const isSwipe = Math.abs(distance) > minSwipeDistance;
     
-    // If it's not a swipe, do nothing (prevent click navigation)
     if (!isSwipe) {
       setTouchStart(null);
       setTouchEnd(null);
@@ -71,7 +69,6 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
     const deltaX = Math.abs(e.clientX - mouseStart.x);
     const deltaY = Math.abs(e.clientY - mouseStart.y);
     
-    // If mouse moved less than 5px, consider it a click (prevent navigation)
     if (deltaX < 5 && deltaY < 5) {
       e.preventDefault();
       e.stopPropagation();
@@ -81,7 +78,6 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
   };
 
   const handleCardClick = (e) => {
-    // Prevent navigation on click
     e.preventDefault();
     e.stopPropagation();
   };
@@ -94,48 +90,48 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
       onTouchEnd={onTouchEnd}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
-      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden flex-shrink-0 w-full md:w-[calc(33.333%-1rem)] snap-center select-none"
+      className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden flex-shrink-0 w-full md:w-[calc(33.333%-1rem)] snap-center select-none"
     >
       {/* Card Header */}
-      <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-bold text-dimo-blue">
+      <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="text-lg font-bold text-dimo-blue">
               {employee.name.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-xl font-bold text-white truncate">
+            <h3 className="text-lg font-bold text-white truncate">
               {employee.name}
             </h3>
-            <p className="text-sm text-blue-100 truncate">{employee.email}</p>
+            <p className="text-xs text-blue-100 truncate">{employee.email}</p>
           </div>
         </div>
       </div>
 
       {/* Card Body */}
-      <div className="p-6">
+      <div className="p-4">
         {/* Total Tasks */}
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-sm font-semibold text-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-gray-700">
             Total Tasks:
           </span>
-          <span className="text-2xl font-bold text-dimo-blue">
+          <span className="text-xl font-bold text-dimo-blue">
             {summary.total}
           </span>
         </div>
 
         {/* Pie Chart */}
         {summary.total > 0 ? (
-          <div className="mb-6">
-            <ResponsiveContainer width="100%" height={200}>
+          <div className="mb-4">
+            <ResponsiveContainer width="100%" height={150}>
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
+                  innerRadius={40}
+                  outerRadius={60}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -148,28 +144,29 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
                     backgroundColor: "white",
                     border: "1px solid #e5e7eb",
                     borderRadius: "0.5rem",
+                    fontSize: "0.875rem",
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="mb-6 h-[200px] flex items-center justify-center bg-gray-50 rounded-lg">
+          <div className="mb-4 h-[150px] flex items-center justify-center bg-gray-50 rounded-lg">
             <p className="text-gray-400 text-sm">No tasks assigned</p>
           </div>
         )}
 
-        {/* Task Summary Details */}
-        <div className="space-y-3">
+        {/* Task Summary Details - Vertical Layout */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS.notStarted }}
               ></div>
-              <span className="text-sm text-gray-600">Not Started:</span>
+              <span className="text-xs text-gray-600">Not Started</span>
             </div>
-            <span className="text-sm font-semibold text-gray-700">
+            <span className="text-xs font-semibold text-gray-700">
               {summary.notStarted}
             </span>
           </div>
@@ -177,12 +174,12 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS.inProgress }}
               ></div>
-              <span className="text-sm text-gray-600">In Progress:</span>
+              <span className="text-xs text-gray-600">In Progress</span>
             </div>
-            <span className="text-sm font-semibold text-blue-700">
+            <span className="text-xs font-semibold text-blue-700">
               {summary.inProgress}
             </span>
           </div>
@@ -190,12 +187,12 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS.completed }}
               ></div>
-              <span className="text-sm text-gray-600">Completed:</span>
+              <span className="text-xs text-gray-600">Completed</span>
             </div>
-            <span className="text-sm font-semibold text-green-700">
+            <span className="text-xs font-semibold text-green-700">
               {summary.completed}
             </span>
           </div>
@@ -203,12 +200,12 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS.pending }}
               ></div>
-              <span className="text-sm text-gray-600">Pending Approval:</span>
+              <span className="text-xs text-gray-600">Pending</span>
             </div>
-            <span className="text-sm font-semibold text-orange-700">
+            <span className="text-xs font-semibold text-orange-700">
               {summary.pending}
             </span>
           </div>
@@ -216,12 +213,12 @@ const EmployeeCard = ({ employee, summary, handleEmployeeClick }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS.hold }}
               ></div>
-              <span className="text-sm text-gray-600">On Hold:</span>
+              <span className="text-xs text-gray-600">On Hold</span>
             </div>
-            <span className="text-sm font-semibold text-yellow-700">
+            <span className="text-xs font-semibold text-yellow-700">
               {summary.hold}
             </span>
           </div>
