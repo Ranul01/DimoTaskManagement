@@ -160,6 +160,7 @@ const TaskDetail = () => {
 
     try {
       const updateData = {};
+      const currentTimestamp = new Date().toISOString();
 
       // Update status if changed
       if (hasChanges) {
@@ -167,7 +168,7 @@ const TaskDetail = () => {
         updateData.statusHistory = arrayUnion({
           status: pendingStatus,
           changedBy: currentUser.uid,
-          changedAt: new Date().toISOString(),
+          changedAt: currentTimestamp,
           note: pendingHoldReason || `Status changed to ${pendingStatus}`,
         });
 
@@ -179,6 +180,19 @@ const TaskDetail = () => {
 
         if (pendingStatus !== "complete") {
           updateData.approved = false;
+        }
+
+        // Add notification for complete or hold status
+        if (pendingStatus === "complete" || pendingStatus === "hold") {
+          updateData.adminNotification = {
+            status: pendingStatus,
+            employeeId: currentUser.uid,
+            createdAt: currentTimestamp,
+            read: false,
+            message: pendingStatus === "complete" 
+              ? "Task marked as complete" 
+              : `Task put on hold: ${pendingHoldReason}`,
+          };
         }
       }
 
@@ -194,7 +208,7 @@ const TaskDetail = () => {
           {
             status: pendingStatus,
             changedBy: currentUser.uid,
-            changedAt: new Date().toISOString(),
+            changedAt: currentTimestamp,
             note: pendingHoldReason || `Status changed to ${pendingStatus}`,
           },
         ],
