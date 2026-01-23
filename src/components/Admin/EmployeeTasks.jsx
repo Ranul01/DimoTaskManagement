@@ -122,9 +122,18 @@ const EmployeeTasks = () => {
 
   const handleApprove = async (taskId) => {
     try {
+      const taskDoc = await getDoc(doc(db, "tasks", taskId));
+      const taskData = taskDoc.data();
+      
       await updateDoc(doc(db, "tasks", taskId), {
         approved: true,
         rejectionReason: null,
+        employeeNotification: {  // ADD THIS
+          status: "approved",
+          message: `Your task "${taskData.name}" has been approved by admin`,
+          createdAt: new Date().toISOString(),
+          read: false
+        },
         statusHistory: arrayUnion({
           status: "approved",
           changedBy: "admin",
@@ -559,10 +568,19 @@ const RejectTaskModal = ({ taskId, onClose }) => {
     setLoading(true);
 
     try {
-      await updateDoc(doc(db, "tasks", taskId), {
+      const taskDoc = await getDoc(doc(db, "tasks", taskId)); // CHANGED: rejectingTaskId -> taskId
+      const taskData = taskDoc.data();
+      
+      await updateDoc(doc(db, "tasks", taskId), { // CHANGED: rejectingTaskId -> taskId
         status: "not-started",
         approved: false,
         rejectionReason: rejectionReason,
+        employeeNotification: {
+          status: "rejected",
+          message: rejectionReason,
+          createdAt: new Date().toISOString(),
+          read: false
+        },
         statusHistory: arrayUnion({
           status: "rejected",
           changedBy: "admin",
@@ -735,6 +753,13 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
         targetDate: taskData.targetDate,
         assignedTo: selectedEmployees,
         areaIds: selectedAreas,
+        // ADD THIS - Notification for task update
+        employeeNotification: {
+          status: "updated",
+          message: `Task "${taskData.name}" has been updated by admin`,
+          createdAt: new Date().toISOString(),
+          read: false
+        },
         statusHistory: arrayUnion({
           status: "edited",
           changedBy: "admin",
@@ -1141,6 +1166,13 @@ const CreateTaskModal = ({
         rejectionReason: null,
         holdReason: null,
         remarksChat: [],
+        // ADD THIS - Notification for task creation
+        employeeNotification: {
+          status: "created",
+          message: `New task "${taskData.name}" has been assigned to you`,
+          createdAt: new Date().toISOString(),
+          read: false
+        },
         statusHistory: [
           {
             status: "not-started",
