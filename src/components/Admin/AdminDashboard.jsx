@@ -7,6 +7,7 @@ import {
   doc,
   getDoc,
   where,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
@@ -25,9 +26,13 @@ const AdminDashboard = () => {
   const [editingProject, setEditingProject] = useState(null);
   const [userName, setUserName] = useState("");
   const [activeView, setActiveView] = useState("projects");
+  const [showWelcome, setShowWelcome] = useState(true);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const notificationRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const menuRef = useRef(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
     const getUserName = async () => {
@@ -59,7 +64,6 @@ const AdminDashboard = () => {
       setEmployees(employeesData);
     });
 
-    // Update tasks query to exclude deleted tasks
     const tasksQuery = query(
       collection(db, "tasks"),
       where("deleted", "!=", true),
@@ -93,6 +97,23 @@ const AdminDashboard = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Detect scroll on mobile swipe container
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        const scrollLeft = scrollContainerRef.current.scrollLeft;
+        // Hide welcome section when scrolled more than 50px
+        setShowWelcome(scrollLeft < 50);
+      }
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
   const getEmployeeTaskSummary = (employeeId) => {
     const employeeTasks = allTasks.filter((task) =>
       task.assignedTo?.includes(employeeId),
@@ -114,44 +135,83 @@ const AdminDashboard = () => {
     };
   };
 
-  const getTasksWithUnreadMessages = () => {
+  const getTasksWithStatusNotifications = () => {
     return allTasks
       .filter((task) => {
-        if (!task.remarksChat || task.remarksChat.length === 0) return false;
-        return task.remarksChat.some(
-          (msg) => msg.senderRole === "employee" && !msg.adminRead,
-        );
+        // Check for unread status notifications (complete or hold)
+        if (task.adminNotification && !task.adminNotification.read) {
+          return (
+            task.adminNotification.status === "complete" ||
+            task.adminNotification.status === "hold"
+          );
+        }
+
+        // Also check for unread chat messages
+        if (task.remarksChat && task.remarksChat.length > 0) {
+          return task.remarksChat.some(
+            (msg) => msg.senderRole === "employee" && !msg.adminRead,
+          );
+        }
+
+        return false;
       })
       .map((task) => {
-        const unreadCount = task.remarksChat.filter(
-          (msg) => msg.senderRole === "employee" && !msg.adminRead,
-        ).length;
+        let notificationType = "message";
+        let notificationMessage = "";
+        let timestamp = null;
 
-        const latestUnreadMsg = task.remarksChat
-          .filter((msg) => msg.senderRole === "employee" && !msg.adminRead)
-          .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt))[0];
+        // Prioritize status notifications over chat
+        if (task.adminNotification && !task.adminNotification.read) {
+          notificationType =
+            task.adminNotification.status === "complete"
+              ? "complete"
+              : "hold";
+          notificationMessage = task.adminNotification.message;
+          timestamp = new Date(task.adminNotification.createdAt);
+        } else if (task.remarksChat && task.remarksChat.length > 0) {
+          const unreadMessages = task.remarksChat.filter(
+            (msg) => msg.senderRole === "employee" && !msg.adminRead,
+          );
+
+          if (unreadMessages.length > 0) {
+            const latestMsg = unreadMessages.sort(
+              (a, b) => new Date(b.sentAt) - new Date(a.sentAt),
+            )[0];
+
+            notificationMessage = latestMsg.text;
+            timestamp = new Date(latestMsg.sentAt);
+          }
+        }
 
         return {
           ...task,
-          unreadCount,
-          latestUnreadMsg,
+          notificationType,
+          notificationMessage,
+          notificationTimestamp: timestamp,
         };
       })
-      .sort(
-        (a, b) =>
-          new Date(b.latestUnreadMsg.sentAt) -
-          new Date(a.latestUnreadMsg.sentAt),
-      );
+      .sort((a, b) => b.notificationTimestamp - a.notificationTimestamp);
   };
 
   const getTotalUnreadCount = () => {
-    return allTasks.reduce((total, task) => {
-      if (!task.remarksChat) return total;
-      const unreadInTask = task.remarksChat.filter(
-        (msg) => msg.senderRole === "employee" && !msg.adminRead,
-      ).length;
-      return total + unreadInTask;
-    }, 0);
+    let count = 0;
+
+    allTasks.forEach((task) => {
+      // Count status notifications
+      if (task.adminNotification && !task.adminNotification.read) {
+        count++;
+      }
+
+      // Count chat notifications
+      if (task.remarksChat) {
+        const unreadMessages = task.remarksChat.filter(
+          (msg) => msg.senderRole === "employee" && !msg.adminRead,
+        ).length;
+        count += unreadMessages;
+      }
+    });
+
+    return count;
   };
 
   const getEmployeeForTask = (task) => {
@@ -163,6 +223,18 @@ const AdminDashboard = () => {
   const handleNotificationClick = async (task) => {
     const employee = getEmployeeForTask(task);
     if (!employee) return;
+
+    // Mark status notification as read if exists
+    if (task.adminNotification && !task.adminNotification.read) {
+      try {
+        await updateDoc(doc(db, "tasks", task.id), {
+          "adminNotification.read": true,
+        });
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    }
+
     navigate(`/admin/project/${task.projectId}/employee/${employee.id}`);
     setShowNotifications(false);
   };
@@ -171,7 +243,18 @@ const AdminDashboard = () => {
     navigate(`/admin/employee/${employeeId}/tasks`);
   };
 
-  const tasksWithUnread = getTasksWithUnreadMessages();
+  const handleEditProject = (e, project) => {
+    e.stopPropagation();
+    setEditingProject(project);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteProject = async (e, project) => {
+    e.stopPropagation();
+    // Add delete functionality here
+  };
+
+  const tasksWithUnread = getTasksWithStatusNotifications();
   const totalUnread = getTotalUnreadCount();
 
   return (
@@ -179,29 +262,31 @@ const AdminDashboard = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Message with Notifications */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        {/* Welcome Message with Notifications - Hidden on mobile when swiped */}
+        <div
+  className={`bg-white rounded-lg shadow-sm p-4 mb-6 transition-all duration-700 ease-in-out transform relative z-50 ${!showWelcome ? "md:block hidden opacity-0 scale-95 -translate-y-4" : "opacity-100 scale-100 translate-y-0"}`}
+>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-dimo-blue">
-                Welcome back, {userName}!
+              <h1 className="text-xl font-semibold text-dimo-blue">
+                Welcome back
               </h1>
-              <p className="text-gray-600 mt-2">
-                Manage your projects and tasks efficiently
+              <p className="text-gray-500 text-sm mt-0.5">
+                Manage your projects and tasks
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {/* History Button - Mobile Only */}
               <button
                 onClick={() => navigate("/admin/history")}
-                className="md:hidden p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                className="md:hidden p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
                 title="View Task History"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-700"
+                  className="h-5 w-5 text-gray-700"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -216,14 +301,14 @@ const AdminDashboard = () => {
               </button>
 
               {/* Notification Bell */}
-              <div className="relative" ref={notificationRef}>
+              <div className="relative z-[100]" ref={notificationRef}>
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+                  className="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-gray-700"
+                    className="h-5 w-5 text-gray-700"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -238,15 +323,15 @@ const AdminDashboard = () => {
 
                   {/* Notification Badge */}
                   {totalUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {totalUnread > 9 ? "9+" : totalUnread}
                     </span>
                   )}
                 </button>
 
-                {/* Notifications Dropdown */}
+                {/* Notifications Dropdown - FIXED VERSION */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[400px] sm:max-h-[500px] overflow-hidden flex flex-col">
+                  <div className="absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-lg shadow-2xl border border-gray-200 max-h-[400px] sm:max-h-[500px] overflow-hidden flex flex-col z-[100]">
                     {/* Header */}
                     <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-700">
                       <h3 className="text-lg font-semibold text-white">
@@ -272,11 +357,46 @@ const AdminDashboard = () => {
                               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
                             />
                           </svg>
-                          <p className="text-gray-500">No new messages</p>
+                          <p className="text-gray-500">No new notifications</p>
                         </div>
                       ) : (
                         tasksWithUnread.map((task) => {
                           const employee = getEmployeeForTask(task);
+                          
+                          // Determine icon and colors based on notification type
+                          const getNotificationStyle = () => {
+                            switch (task.notificationType) {
+                              case "complete":
+                                return {
+                                  bgColor: "bg-green-500",
+                                  icon: (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  ),
+                                  label: "Task Completed"
+                                };
+                              case "hold":
+                                return {
+                                  bgColor: "bg-yellow-500",
+                                  icon: (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  ),
+                                  label: "Task On Hold"
+                                };
+                              default:
+                                return {
+                                  bgColor: "bg-purple-500",
+                                  icon: null,
+                                  label: "New Message"
+                                };
+                            }
+                          };
+
+                          const style = getNotificationStyle();
+
                           return (
                             <div
                               key={task.id}
@@ -284,34 +404,42 @@ const AdminDashboard = () => {
                               className="p-4 border-b border-gray-100 hover:bg-purple-50 cursor-pointer transition"
                             >
                               <div className="flex items-start space-x-3">
-                                {/* Employee Avatar */}
-                                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <span className="text-white font-semibold text-sm">
-                                    {employee?.name?.charAt(0).toUpperCase() ||
-                                      "?"}
-                                  </span>
+                                {/* Employee/Status Avatar */}
+                                <div className={`w-10 h-10 ${style.bgColor} rounded-full flex items-center justify-center flex-shrink-0`}>
+                                  {style.icon ? (
+                                    <span className="text-white">{style.icon}</span>
+                                  ) : (
+                                    <span className="text-white font-semibold text-sm">
+                                      {employee?.name?.charAt(0).toUpperCase() || "?"}
+                                    </span>
+                                  )}
                                 </div>
 
-                                {/* Message Content */}
+                                {/* Notification Content */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
-                                    <p className="text-sm font-semibold text-gray-900 truncate">
-                                      {employee?.name || "Unknown Employee"}
-                                    </p>
-                                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                                      {task.unreadCount}
-                                    </span>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-semibold text-gray-900 truncate">
+                                        {employee?.name || "Unknown Employee"}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {style.label}
+                                      </p>
+                                    </div>
+                                    {task.notificationType !== "message" && (
+                                      <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                                        1
+                                      </span>
+                                    )}
                                   </div>
                                   <p className="text-xs text-gray-500 mb-1">
                                     Task: {task.name}
                                   </p>
                                   <p className="text-sm text-gray-700 line-clamp-2">
-                                    {task.latestUnreadMsg.text}
+                                    {task.notificationMessage}
                                   </p>
                                   <p className="text-xs text-gray-400 mt-1">
-                                    {new Date(
-                                      task.latestUnreadMsg.sentAt,
-                                    ).toLocaleString("en-US", {
+                                    {task.notificationTimestamp?.toLocaleString("en-US", {
                                       month: "short",
                                       day: "numeric",
                                       hour: "2-digit",
@@ -370,7 +498,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Mobile Swipeable Container */}
-        <div className="md:hidden overflow-x-auto snap-x snap-mandatory flex space-x-4 pb-4 scrollbar-hide">
+        <div
+          ref={scrollContainerRef}
+          className="md:hidden overflow-x-auto snap-x snap-mandatory flex space-x-4 pb-4 scrollbar-hide"
+        >
           <div className="snap-center shrink-0 w-full">
             <ProjectsView
               projects={projects}

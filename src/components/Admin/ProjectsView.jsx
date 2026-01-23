@@ -66,14 +66,14 @@ const ProjectsView = ({ projects, navigate, setShowCreateModal, setShowEditModal
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">All Projects</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-800">All Projects</h2>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-dimo-blue text-white px-6 py-3 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+          className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
         >
-          <span className="text-xl">+</span>
-          <span>Create New Project</span>
+          <span className="text-lg">+</span>
+          <span>Create Project</span>
         </button>
       </div>
 
@@ -99,7 +99,7 @@ const ProjectsView = ({ projects, navigate, setShowCreateModal, setShowEditModal
                 className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 cursor-pointer overflow-hidden"
               >
                 {/* Three Dot Menu Button */}
-                <div className="absolute top-2 right-2 z-10">
+                <div className="absolute top-1/2 -translate-y-1/2 right-4 z-10">
                   <button
                     onClick={(e) => handleMenuToggle(e, project.id)}
                     className="menu-button bg-white text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-200 shadow-md"

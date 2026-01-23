@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
@@ -44,7 +50,7 @@ const EmployeeTaskHistory = () => {
     const q = query(
       collection(db, "tasks"),
       where("deleted", "==", true),
-      where("assignedTo", "array-contains", currentUser.uid)
+      where("assignedTo", "array-contains", currentUser.uid),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -67,7 +73,7 @@ const EmployeeTaskHistory = () => {
     // Filter by task name
     if (filters.taskName) {
       filtered = filtered.filter((task) =>
-        task.name.toLowerCase().includes(filters.taskName.toLowerCase())
+        task.name.toLowerCase().includes(filters.taskName.toLowerCase()),
       );
     }
 
@@ -79,13 +85,13 @@ const EmployeeTaskHistory = () => {
     // Filter by date range
     if (filters.startDate) {
       filtered = filtered.filter(
-        (task) => new Date(task.deletedAt) >= new Date(filters.startDate)
+        (task) => new Date(task.deletedAt) >= new Date(filters.startDate),
       );
     }
 
     if (filters.endDate) {
       filtered = filtered.filter(
-        (task) => new Date(task.deletedAt) <= new Date(filters.endDate)
+        (task) => new Date(task.deletedAt) <= new Date(filters.endDate),
       );
     }
 
@@ -162,32 +168,40 @@ const EmployeeTaskHistory = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <button
-            onClick={() => navigate("/employee")}
-            className="mb-4 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group touch-manipulation"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 sm:h-6 sm:w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Compact Header */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/employee")}
+              className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+              title="Back to Dashboard"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-          </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-dimo-blue">My Task History</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
-            View your deleted tasks ({filteredTasks.length} total)
-          </p>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                My Task History
+              </h1>
+              <p className="text-gray-500 text-xs mt-0.5">
+                {filteredTasks.length} deleted task(s)
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Collapsible Filters */}
@@ -211,7 +225,9 @@ const EmployeeTaskHistory = () => {
                   d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                 />
               </svg>
-              <h2 className="text-base sm:text-lg font-semibold text-gray-800">Filters</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+                Filters
+              </h2>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               {showFilters && (
@@ -255,7 +271,9 @@ const EmployeeTaskHistory = () => {
                   <input
                     type="text"
                     value={filters.taskName}
-                    onChange={(e) => handleFilterChange("taskName", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("taskName", e.target.value)
+                    }
                     placeholder="Search by task name..."
                     className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   />
@@ -268,7 +286,9 @@ const EmployeeTaskHistory = () => {
                   </label>
                   <select
                     value={filters.project}
-                    onChange={(e) => handleFilterChange("project", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("project", e.target.value)
+                    }
                     className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   >
                     <option value="">All Projects</option>
@@ -288,8 +308,10 @@ const EmployeeTaskHistory = () => {
                   <input
                     type="date"
                     value={filters.startDate}
-                    onChange={(e) => handleFilterChange("startDate", e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
+                    onChange={(e) =>
+                      handleFilterChange("startDate", e.target.value)
+                    }
+                    className="w-full px-0.3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   />
                 </div>
 
@@ -301,8 +323,10 @@ const EmployeeTaskHistory = () => {
                   <input
                     type="date"
                     value={filters.endDate}
-                    onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
+                    onChange={(e) =>
+                      handleFilterChange("endDate", e.target.value)
+                    }
+                    className="w-full px-0.3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none"
                   />
                 </div>
 
@@ -341,7 +365,9 @@ const EmployeeTaskHistory = () => {
         {/* Tasks List */}
         {loading ? (
           <div className="bg-white rounded-lg shadow-md p-8 sm:p-12 text-center">
-            <p className="text-gray-500 text-base sm:text-lg">Loading history...</p>
+            <p className="text-gray-500 text-base sm:text-lg">
+              Loading history...
+            </p>
           </div>
         ) : filteredTasks.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 sm:p-12 text-center">
@@ -359,7 +385,9 @@ const EmployeeTaskHistory = () => {
                 d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
               />
             </svg>
-            <p className="text-gray-500 text-base sm:text-lg">No deleted tasks found</p>
+            <p className="text-gray-500 text-base sm:text-lg">
+              No deleted tasks found
+            </p>
           </div>
         ) : (
           <div className="space-y-2 sm:space-y-3">
@@ -452,7 +480,7 @@ const EmployeeTaskHistory = () => {
                         <div className="flex flex-wrap items-center gap-2">
                           <span
                             className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
-                              task.status
+                              task.status,
                             )}`}
                           >
                             {task.status.replace("-", " ").toUpperCase()}

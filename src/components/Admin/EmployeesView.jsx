@@ -18,16 +18,16 @@ const EmployeesView = ({ employees, getEmployeeTaskSummary, handleEmployeeClick 
   return (
     <>
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">User Summaries</h2>
-        <p className="text-gray-600 mt-2">
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-gray-800">User Summaries</h2>
+        <p className="text-gray-500 text-sm mt-0.5">
           View task summaries for each employee
         </p>
       </div>
 
       {/* Employees Section */}
       {employees.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <p className="text-gray-500 text-lg">No employees found</p>
         </div>
       ) : (
@@ -37,11 +37,11 @@ const EmployeesView = ({ employees, getEmployeeTaskSummary, handleEmployeeClick 
             <>
               <button
                 onClick={() => scroll("left")}
-                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-600"
+                  className="h-5 w-5 text-gray-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -56,11 +56,11 @@ const EmployeesView = ({ employees, getEmployeeTaskSummary, handleEmployeeClick 
               </button>
               <button
                 onClick={() => scroll("right")}
-                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-600"
+                  className="h-5 w-5 text-gray-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
