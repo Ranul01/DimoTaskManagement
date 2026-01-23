@@ -1326,6 +1326,12 @@ const CreateTaskModal = ({ projectId, project, onClose }) => {
         rejectionReason: null,
         holdReason: null,
         remarksChat: [],
+        employeeNotification: {
+          status: "created",
+          message: `New task "${taskData.name}" has been assigned to you`,
+          createdAt: new Date().toISOString(),
+          read: false
+        },
         statusHistory: [
           {
             status: "not-started",
