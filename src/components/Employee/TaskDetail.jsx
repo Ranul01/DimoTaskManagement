@@ -6,6 +6,8 @@ import {
   updateDoc,
   arrayUnion,
   onSnapshot,
+  addDoc,
+  collection,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
@@ -223,6 +225,63 @@ const TaskDetail = () => {
       setUpdating(false);
     }
   };
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   if (selectedEmployees.length === 0) {
+  //     alert("Please select at least one employee");
+  //     return;
+  //   }
+
+  //   if (selectedAreas.length === 0) {
+  //     alert("Please select at least one area");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     const createdAtISO = new Date(taskData.createdDate).toISOString();
+
+  //     await addDoc(collection(db, "tasks"), {
+  //       name: taskData.name,
+  //       details: taskData.details,
+  //       projectId,
+  //       assignedTo: selectedEmployees,
+  //       areaIds: selectedAreas,
+  //       createdAt: createdAtISO,
+  //       targetDate: taskData.targetDate,
+  //       status: "not-started",
+  //       approved: false,
+  //       deleted: false,
+  //       rejectionReason: null,
+  //       holdReason: null,
+  //       remarksChat: [],
+  //       // ADD THIS - Notification for task creation
+  //       employeeNotification: {
+  //         status: "created",
+  //         message: `New task "${taskData.name}" has been assigned to you`,
+  //         createdAt: new Date().toISOString(),
+  //         read: false
+  //       },
+  //       statusHistory: [
+  //         {
+  //           status: "not-started",
+  //           changedBy: "admin",
+  //           changedAt: createdAtISO,
+  //           note: "Task created",
+  //         },
+  //       ],
+  //     });
+  //     onClose();
+  //   } catch (error) {
+  //     console.error("Error creating task:", error);
+  //     alert("Failed to create task");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   if (loading) {
     return (
