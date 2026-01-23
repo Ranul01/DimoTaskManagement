@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
@@ -37,9 +46,9 @@ const EmployeeDashboard = () => {
     // Listen to all tasks assigned to this employee - remove deleted filter from query
     const tasksQuery = query(
       collection(db, "tasks"),
-      where("assignedTo", "array-contains", currentUser.uid)
+      where("assignedTo", "array-contains", currentUser.uid),
     );
-    
+
     const unsubscribeTasks = onSnapshot(tasksQuery, (tasksSnapshot) => {
       const tasksData = tasksSnapshot.docs
         .map((doc) => ({
@@ -59,7 +68,10 @@ const EmployeeDashboard = () => {
   // Close notification dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     };
@@ -81,12 +93,12 @@ const EmployeeDashboard = () => {
 
         // Check if there are any unread messages from admin
         return task.remarksChat.some(
-          (msg) => msg.senderRole === "admin" && !msg.employeeRead
+          (msg) => msg.senderRole === "admin" && !msg.employeeRead,
         );
       })
       .map((task) => {
         const unreadCount = task.remarksChat.filter(
-          (msg) => msg.senderRole === "admin" && !msg.employeeRead
+          (msg) => msg.senderRole === "admin" && !msg.employeeRead,
         ).length;
 
         const latestUnreadMsg = task.remarksChat
@@ -99,12 +111,16 @@ const EmployeeDashboard = () => {
           latestUnreadMsg,
         };
       })
-      .sort((a, b) => new Date(b.latestUnreadMsg.sentAt) - new Date(a.latestUnreadMsg.sentAt));
+      .sort(
+        (a, b) =>
+          new Date(b.latestUnreadMsg.sentAt) -
+          new Date(a.latestUnreadMsg.sentAt),
+      );
   };
 
   const getTasksWithStatusNotifications = () => {
     console.log("All tasks:", allTasks); // DEBUG
-    
+
     const filtered = allTasks.filter((task) => {
       if (task.employeeNotification && !task.employeeNotification.read) {
         console.log("Found notification:", task.employeeNotification); // DEBUG
@@ -124,42 +140,43 @@ const EmployeeDashboard = () => {
 
       return false;
     });
-    
+
     console.log("Filtered notifications:", filtered); // DEBUG
-    
-    return filtered.map((task) => {
-      let notificationType = "message";
-      let notificationMessage = "";
-      let timestamp = null;
 
-      // Prioritize status notifications over chat
-      if (task.employeeNotification && !task.employeeNotification.read) {
-        notificationType = task.employeeNotification.status; // Can be: approved, rejected, created, updated
-        notificationMessage = task.employeeNotification.message;
-        timestamp = new Date(task.employeeNotification.createdAt);
-      } else if (task.remarksChat && task.remarksChat.length > 0) {
-        const unreadMessages = task.remarksChat.filter(
-          (msg) => msg.senderRole === "admin" && !msg.employeeRead,
-        );
+    return filtered
+      .map((task) => {
+        let notificationType = "message";
+        let notificationMessage = "";
+        let timestamp = null;
 
-        if (unreadMessages.length > 0) {
-          const latestMsg = unreadMessages.sort(
-            (a, b) => new Date(b.sentAt) - new Date(a.sentAt),
-          )[0];
+        // Prioritize status notifications over chat
+        if (task.employeeNotification && !task.employeeNotification.read) {
+          notificationType = task.employeeNotification.status; // Can be: approved, rejected, created, updated
+          notificationMessage = task.employeeNotification.message;
+          timestamp = new Date(task.employeeNotification.createdAt);
+        } else if (task.remarksChat && task.remarksChat.length > 0) {
+          const unreadMessages = task.remarksChat.filter(
+            (msg) => msg.senderRole === "admin" && !msg.employeeRead,
+          );
 
-          notificationMessage = latestMsg.text;
-          timestamp = new Date(latestMsg.sentAt);
+          if (unreadMessages.length > 0) {
+            const latestMsg = unreadMessages.sort(
+              (a, b) => new Date(b.sentAt) - new Date(a.sentAt),
+            )[0];
+
+            notificationMessage = latestMsg.text;
+            timestamp = new Date(latestMsg.sentAt);
+          }
         }
-      }
 
-      return {
-        ...task,
-        notificationType,
-        notificationMessage,
-        notificationTimestamp: timestamp,
-      };
-    })
-    .sort((a, b) => b.notificationTimestamp - a.notificationTimestamp);
+        return {
+          ...task,
+          notificationType,
+          notificationMessage,
+          notificationTimestamp: timestamp,
+        };
+      })
+      .sort((a, b) => b.notificationTimestamp - a.notificationTimestamp);
   };
 
   // Get total unread message count
@@ -210,7 +227,7 @@ const EmployeeDashboard = () => {
     try {
       const taskDoc = await getDoc(doc(db, "tasks", taskId));
       const taskData = taskDoc.data();
-      
+
       await updateDoc(doc(db, "tasks", taskId), {
         approved: true,
         rejectionReason: null,
@@ -218,7 +235,7 @@ const EmployeeDashboard = () => {
           status: "approved",
           message: `Your task "${taskData.name}" has been approved by admin`,
           createdAt: new Date().toISOString(),
-          read: false
+          read: false,
         },
         statusHistory: arrayUnion({
           status: "approved",
@@ -236,7 +253,7 @@ const EmployeeDashboard = () => {
     try {
       const taskDoc = await getDoc(doc(db, "tasks", taskId));
       const taskData = taskDoc.data();
-      
+
       await updateDoc(doc(db, "tasks", taskId), {
         status: "not-started",
         approved: false,
@@ -245,7 +262,7 @@ const EmployeeDashboard = () => {
           status: "rejected",
           message: rejectionReason,
           createdAt: new Date().toISOString(),
-          read: false
+          read: false,
         },
         statusHistory: arrayUnion({
           status: "rejected",
@@ -364,7 +381,7 @@ const EmployeeDashboard = () => {
                       ) : (
                         tasksWithStatusNotifications.map((task) => {
                           const project = getProjectForTask(task);
-                          
+
                           // Determine icon and colors based on notification type
                           const getNotificationStyle = () => {
                             switch (task.notificationType) {
@@ -372,47 +389,91 @@ const EmployeeDashboard = () => {
                                 return {
                                   bgColor: "bg-green-500",
                                   icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
                                     </svg>
                                   ),
-                                  label: "Task Approved"
+                                  label: "Task Approved",
                                 };
                               case "rejected":
                                 return {
                                   bgColor: "bg-red-500",
                                   icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
                                     </svg>
                                   ),
-                                  label: "Task Rejected"
+                                  label: "Task Rejected",
                                 };
-                              case "created":  // ADD THIS
+                              case "created": // ADD THIS
                                 return {
                                   bgColor: "bg-blue-500",
                                   icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 4v16m8-8H4"
+                                      />
                                     </svg>
                                   ),
-                                  label: "New Task Assigned"
+                                  label: "New Task Assigned",
                                 };
-                              case "updated":  // ADD THIS
+                              case "updated": // ADD THIS
                                 return {
                                   bgColor: "bg-orange-500",
                                   icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                      />
                                     </svg>
                                   ),
-                                  label: "Task Updated"
+                                  label: "Task Updated",
                                 };
                               default:
                                 return {
                                   bgColor: "bg-purple-500",
                                   icon: null,
-                                  label: "New Message"
+                                  label: "New Message",
                                 };
                             }
                           };
@@ -427,11 +488,17 @@ const EmployeeDashboard = () => {
                             >
                               <div className="flex items-start space-x-3">
                                 {/* Admin/Status Avatar */}
-                                <div className={`w-10 h-10 ${style.bgColor} rounded-full flex items-center justify-center flex-shrink-0`}>
+                                <div
+                                  className={`w-10 h-10 ${style.bgColor} rounded-full flex items-center justify-center flex-shrink-0`}
+                                >
                                   {style.icon ? (
-                                    <span className="text-white">{style.icon}</span>
+                                    <span className="text-white">
+                                      {style.icon}
+                                    </span>
                                   ) : (
-                                    <span className="text-white font-semibold text-sm">A</span>
+                                    <span className="text-white font-semibold text-sm">
+                                      A
+                                    </span>
                                   )}
                                 </div>
 
@@ -439,8 +506,12 @@ const EmployeeDashboard = () => {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
                                     <div className="flex-1">
-                                      <p className="text-sm font-semibold text-gray-900 truncate">Admin</p>
-                                      <p className="text-xs text-gray-500">{style.label}</p>
+                                      <p className="text-sm font-semibold text-gray-900 truncate">
+                                        Admin
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {style.label}
+                                      </p>
                                     </div>
                                     {task.notificationType !== "message" && (
                                       <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
@@ -448,20 +519,27 @@ const EmployeeDashboard = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-xs text-gray-500 mb-1">Task: {task.name}</p>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    Task: {task.name}
+                                  </p>
                                   {project && (
-                                    <p className="text-xs text-gray-400 mb-1">Project: {project.name}</p>
+                                    <p className="text-xs text-gray-400 mb-1">
+                                      Project: {project.name}
+                                    </p>
                                   )}
                                   <p className="text-sm text-gray-700 line-clamp-2">
                                     {task.notificationMessage}
                                   </p>
                                   <p className="text-xs text-gray-400 mt-1">
-                                    {task.notificationTimestamp?.toLocaleString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
+                                    {task.notificationTimestamp?.toLocaleString(
+                                      "en-US",
+                                      {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
                                   </p>
                                 </div>
                               </div>
@@ -499,15 +577,6 @@ const EmployeeDashboard = () => {
                   <h3 className="text-xl font-bold text-white">
                     {project.name}
                   </h3>
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>{project.employees?.length || 0} Team Members</span>
-                    <span className="text-dimo-blue text-sm font-medium">View Tasks →</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-4">
-                    Created: {new Date(project.createdAt).toLocaleDateString()}
-                  </p>
                 </div>
               </div>
             ))}
