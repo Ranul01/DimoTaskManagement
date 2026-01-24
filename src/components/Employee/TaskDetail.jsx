@@ -6,6 +6,8 @@ import {
   updateDoc,
   arrayUnion,
   onSnapshot,
+  addDoc,
+  collection,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
@@ -160,6 +162,7 @@ const TaskDetail = () => {
 
     try {
       const updateData = {};
+      const currentTimestamp = new Date().toISOString();
 
       // Update status if changed
       if (hasChanges) {
@@ -167,7 +170,7 @@ const TaskDetail = () => {
         updateData.statusHistory = arrayUnion({
           status: pendingStatus,
           changedBy: currentUser.uid,
-          changedAt: new Date().toISOString(),
+          changedAt: currentTimestamp,
           note: pendingHoldReason || `Status changed to ${pendingStatus}`,
         });
 
@@ -179,6 +182,19 @@ const TaskDetail = () => {
 
         if (pendingStatus !== "complete") {
           updateData.approved = false;
+        }
+
+        // Add notification for complete or hold status
+        if (pendingStatus === "complete" || pendingStatus === "hold") {
+          updateData.adminNotification = {
+            status: pendingStatus,
+            employeeId: currentUser.uid,
+            createdAt: currentTimestamp,
+            read: false,
+            message: pendingStatus === "complete" 
+              ? "Task marked as complete" 
+              : `Task put on hold: ${pendingHoldReason}`,
+          };
         }
       }
 
@@ -194,7 +210,7 @@ const TaskDetail = () => {
           {
             status: pendingStatus,
             changedBy: currentUser.uid,
-            changedAt: new Date().toISOString(),
+            changedAt: currentTimestamp,
             note: pendingHoldReason || `Status changed to ${pendingStatus}`,
           },
         ],
@@ -209,6 +225,63 @@ const TaskDetail = () => {
       setUpdating(false);
     }
   };
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   if (selectedEmployees.length === 0) {
+  //     alert("Please select at least one employee");
+  //     return;
+  //   }
+
+  //   if (selectedAreas.length === 0) {
+  //     alert("Please select at least one area");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     const createdAtISO = new Date(taskData.createdDate).toISOString();
+
+  //     await addDoc(collection(db, "tasks"), {
+  //       name: taskData.name,
+  //       details: taskData.details,
+  //       projectId,
+  //       assignedTo: selectedEmployees,
+  //       areaIds: selectedAreas,
+  //       createdAt: createdAtISO,
+  //       targetDate: taskData.targetDate,
+  //       status: "not-started",
+  //       approved: false,
+  //       deleted: false,
+  //       rejectionReason: null,
+  //       holdReason: null,
+  //       remarksChat: [],
+  //       // ADD THIS - Notification for task creation
+  //       employeeNotification: {
+  //         status: "created",
+  //         message: `New task "${taskData.name}" has been assigned to you`,
+  //         createdAt: new Date().toISOString(),
+  //         read: false
+  //       },
+  //       statusHistory: [
+  //         {
+  //           status: "not-started",
+  //           changedBy: "admin",
+  //           changedAt: createdAtISO,
+  //           note: "Task created",
+  //         },
+  //       ],
+  //     });
+  //     onClose();
+  //   } catch (error) {
+  //     console.error("Error creating task:", error);
+  //     alert("Failed to create task");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -238,62 +311,73 @@ const TaskDetail = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button with Icon */}
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 inline-flex items-center text-dimo-blue hover:text-dimo-dark transition-colors duration-200 group"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 transform group-hover:-translate-x-1 transition-transform duration-200"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-        </button>
-
-        {/* Task Details Card */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-white">Task Details</h1>
-              {hasChanges && (
-                <button
-                  onClick={handleSave}
-                  disabled={updating}
-                  className="bg-white text-dimo-blue px-6 py-2 rounded-lg hover:bg-gray-100 transition duration-200 font-semibold disabled:opacity-50"
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Compact Header */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                title="Go Back"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  {updating ? "Saving..." : "Save Changes"}
-                </button>
-              )}
-            </div>
-          </div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+              </button>
 
-          <div className="p-8 space-y-6">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                  Task Details
+                </h1>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  View and update task
+                </p>
+              </div>
+            </div>
+
+            {hasChanges && (
+              <button
+                onClick={handleSave}
+                disabled={updating}
+                className="px-4 py-2 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50 text-sm font-medium"
+              >
+                {updating ? "Saving..." : "Save"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Task Details Card - Keep existing structure but remove the redundant header */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="p-4 space-y-4">
             {/* Task Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Task Name
               </label>
-              <p className="text-xl font-semibold text-gray-900">{task.name}</p>
+              <p className="text-base font-semibold text-gray-900">{task.name}</p>
             </div>
 
             {/* Task Details */}
             {task.details && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Task Details
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Details
                 </label>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-gray-900 whitespace-pre-wrap">
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">
                     {task.details}
                   </p>
                 </div>
@@ -303,18 +387,18 @@ const TaskDetail = () => {
             {/* Assigned Areas */}
             {areaNames.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-2">
-                  Assigned Area(s)
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  Area(s)
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {areaNames.map((areaName, index) => (
                     <div
                       key={index}
-                      className="flex items-center space-x-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg"
+                      className="flex items-center space-x-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-dimo-blue"
+                        className="h-3.5 w-3.5 text-dimo-blue"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -332,7 +416,7 @@ const TaskDetail = () => {
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                       </svg>
-                      <span className="text-sm font-medium text-dimo-blue">
+                      <span className="text-xs font-medium text-dimo-blue">
                         {areaName}
                       </span>
                     </div>
@@ -343,21 +427,21 @@ const TaskDetail = () => {
 
             {/* Assigned Employees */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">
                 Assigned To
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {assignedEmployees.map((employee) => (
                   <div
                     key={employee.id}
-                    className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full"
+                    className="flex items-center space-x-1.5 bg-gray-100 px-2.5 py-1 rounded-full"
                   >
-                    <div className="w-8 h-8 bg-dimo-blue rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">
+                    <div className="w-6 h-6 bg-dimo-blue rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">
                         {employee.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-xs font-medium text-gray-700">
                       {employee.name}
                     </span>
                   </div>
@@ -366,28 +450,28 @@ const TaskDetail = () => {
             </div>
 
             {/* Dates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Creation Date
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Created
                 </label>
-                <p className="text-lg text-gray-900">
+                <p className="text-sm text-gray-900">
                   {new Date(task.createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
-                    month: "long",
+                    month: "short",
                     day: "numeric",
                   })}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Target Date
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Target
                 </label>
-                <p className="text-lg text-gray-900">
+                <p className="text-sm text-gray-900">
                   {new Date(task.targetDate).toLocaleDateString("en-US", {
                     year: "numeric",
-                    month: "long",
+                    month: "short",
                     day: "numeric",
                   })}
                 </p>
@@ -396,14 +480,14 @@ const TaskDetail = () => {
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">
                 Status
               </label>
               <select
                 value={pendingStatus}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 disabled={updating || task.approved}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-lg font-medium disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none text-sm font-medium disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="not-started">Not Started</option>
                 <option value="in-progress">Work in Progress</option>
@@ -411,56 +495,84 @@ const TaskDetail = () => {
                 <option value="hold">Hold</option>
               </select>
               {task.approved && (
-                <p className="text-sm text-green-600 mt-2">
-                  ✓ This task has been approved and cannot be modified
+                <p className="text-xs text-green-600 mt-1.5 flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Approved - cannot be modified
                 </p>
               )}
             </div>
 
-            {/* Hold Reason Input - Only shows when status is Hold and has changes */}
+            {/* Hold Reason Input */}
             {pendingStatus === "hold" && hasChanges && (
-              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
-                <label className="block text-sm font-medium text-yellow-800 mb-2">
+              <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
+                <label className="block text-xs font-medium text-yellow-800 mb-1.5">
                   Reason to Hold <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   value={pendingHoldReason}
                   onChange={(e) => setPendingHoldReason(e.target.value)}
-                  placeholder="Please explain why this task is being put on hold..."
-                  className="w-full px-4 py-3 border-2 border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none resize-none"
-                  rows="4"
+                  placeholder="Explain why this task is on hold..."
+                  className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none resize-none text-sm"
+                  rows="3"
                   disabled={task.approved}
                 />
                 {!pendingHoldReason.trim() && (
-                  <p className="text-xs text-yellow-700 mt-2">
-                    ⚠ You must provide a reason before saving
+                  <p className="text-xs text-yellow-700 mt-1.5 flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3.5 w-3.5 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    Reason required before saving
                   </p>
                 )}
               </div>
             )}
 
-            {/* Display Current Hold Reason - Only shows saved hold reason */}
+            {/* Display Current Hold Reason */}
             {task.holdReason && task.status === "hold" && !hasChanges && (
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
-                <label className="block text-sm font-medium text-yellow-800 mb-1">
-                  Current Reason for Hold
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <label className="block text-xs font-medium text-yellow-800 mb-1">
+                  Reason for Hold
                 </label>
-                <p className="text-yellow-900">{task.holdReason}</p>
+                <p className="text-sm text-yellow-900">{task.holdReason}</p>
               </div>
             )}
 
             {/* Rejection Reason */}
             {task.rejectionReason && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                <label className="block text-sm font-medium text-red-800 mb-1">
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <label className="block text-xs font-medium text-red-800 mb-1">
                   Rejection Reason
                 </label>
-                <p className="text-red-900 mb-3">{task.rejectionReason}</p>
+                <p className="text-sm text-red-900 mb-2">{task.rejectionReason}</p>
                 {getRejectionDate() && (
-                  <div className="flex items-center space-x-2 pt-2 border-t border-red-200">
+                  <div className="flex items-center space-x-1.5 pt-2 border-t border-red-200">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 text-red-600"
+                      className="h-3.5 w-3.5 text-red-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -472,12 +584,12 @@ const TaskDetail = () => {
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <p className="text-sm text-red-700">
-                      Rejected on:{" "}
+                    <p className="text-xs text-red-700">
+                      Rejected on{" "}
                       {new Date(getRejectionDate()).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "long",
+                        month: "short",
                         day: "numeric",
+                        year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -489,11 +601,11 @@ const TaskDetail = () => {
 
             {/* Approval Status */}
             {task.approved && (
-              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-3">
+              <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                <div className="flex items-center space-x-1.5 mb-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-green-600"
+                    className="h-5 w-5 text-green-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -505,15 +617,15 @@ const TaskDetail = () => {
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span className="text-lg font-semibold text-green-800">
-                    Task Approved by Admin
+                  <span className="text-sm font-semibold text-green-800">
+                    Approved by Admin
                   </span>
                 </div>
                 {getApprovalDate() && (
-                  <div className="flex items-center space-x-2 pt-2 border-t border-green-200">
+                  <div className="flex items-center space-x-1.5 pt-2 border-t border-green-200">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 text-green-600"
+                      className="h-3.5 w-3.5 text-green-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -525,12 +637,12 @@ const TaskDetail = () => {
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <p className="text-sm text-green-700">
-                      Approved on:{" "}
+                    <p className="text-xs text-green-700">
+                      Approved on{" "}
                       {new Date(getApprovalDate()).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "long",
+                        month: "short",
                         day: "numeric",
+                        year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
                       })}

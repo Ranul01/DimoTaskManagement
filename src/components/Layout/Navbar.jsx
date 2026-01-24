@@ -33,7 +33,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-dimo-blue text-white shadow-lg">
+    <nav className="bg-dimo-blue text-white shadow-lg ios-safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo - responsive sizing */}
@@ -60,28 +60,6 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-
-      {/* Admin navigation - conditional rendering based on user role */}
-      {/* {userRole === "admin" && (
-        <div className="bg-dimo-darkblue py-2">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => navigate("/admin")}
-                className="text-white hover:text-gray-200 transition"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => navigate("/admin/history")}
-                className="text-white hover:text-gray-200 transition"
-              >
-                Task History
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
     </nav>
   );
 };
