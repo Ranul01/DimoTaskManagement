@@ -190,6 +190,8 @@ const EmployeeTasks = () => {
           deleted: true,
           deletedAt: new Date().toISOString(),
           deletedBy: "admin",
+          taskChat: [], // Clear task chat history
+          chatNotification: null, // Clear chat notification
           statusHistory: arrayUnion({
             status: "deleted",
             changedBy: "admin",
