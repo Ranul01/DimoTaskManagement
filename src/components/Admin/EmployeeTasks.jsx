@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import Navbar from "../Layout/Navbar";
+import TaskChat from "../shared/TaskChat";
 
 const EmployeeTasks = () => {
   const { projectId, employeeId } = useParams();
@@ -27,6 +28,8 @@ const EmployeeTasks = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [rejectingTaskId, setRejectingTaskId] = useState(null);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedTaskForChat, setSelectedTaskForChat] = useState(null);
   const taskRefs = useRef({});
 
   // Add this effect to scroll to task when page loads
@@ -206,6 +209,14 @@ const EmployeeTasks = () => {
     setShowEditModal(true);
   };
 
+  // Add function to check for unread chat messages
+  const hasUnreadChatMessages = (task) => {
+    if (!task.taskChat || task.taskChat.length === 0) return false;
+    return task.taskChat.some(
+      (msg) => msg.senderRole === "employee" && !msg.adminRead
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -292,9 +303,41 @@ const EmployeeTasks = () => {
                 >
                   {/* Card Header */}
                   <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
-                    <h3 className="text-lg font-bold text-white truncate">
-                      {task.name}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-lg font-bold text-white truncate flex-1">
+                        {task.name}
+                      </h3>
+                      
+                      {/* Chat Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTaskForChat(task);
+                          setShowChatModal(true);
+                        }}
+                        className="relative flex-shrink-0 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition"
+                        title="Open chat"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          />
+                        </svg>
+                        {hasUnreadChatMessages(task) && (
+                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                        )}
+                      </button>
+                    </div>
+                    
                     {areaNames.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {areaNames.map((areaName, index) => (
@@ -571,6 +614,18 @@ const EmployeeTasks = () => {
           onClose={() => {
             setShowRejectModal(false);
             setRejectingTaskId(null);
+          }}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {showChatModal && selectedTaskForChat && (
+        <TaskChat
+          taskId={selectedTaskForChat.id}
+          taskName={selectedTaskForChat.name}
+          onClose={() => {
+            setShowChatModal(false);
+            setSelectedTaskForChat(null);
           }}
         />
       )}
