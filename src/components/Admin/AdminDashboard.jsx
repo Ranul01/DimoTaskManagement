@@ -235,7 +235,24 @@ const AdminDashboard = () => {
       }
     }
 
-    navigate(`/admin/project/${task.projectId}/employee/${employee.id}`);
+    // Mark all unread chat messages as read
+    if (task.remarksChat) {
+      const updatedChat = task.remarksChat.map((msg) => ({
+        ...msg,
+        adminRead: msg.senderRole === "employee" ? true : msg.adminRead,
+      }));
+
+      try {
+        await updateDoc(doc(db, "tasks", task.id), {
+          remarksChat: updatedChat,
+        });
+      } catch (error) {
+        console.error("Error marking chat messages as read:", error);
+      }
+    }
+
+    // Navigate to the specific task with task ID in URL parameter
+    navigate(`/admin/project/${task.projectId}/employee/${employee.id}?task=${task.id}`);
     setShowNotifications(false);
   };
 

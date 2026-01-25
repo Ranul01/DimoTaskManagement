@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   collection,
   query,
@@ -18,6 +18,7 @@ import Navbar from "../Layout/Navbar";
 const EmployeeTasks = () => {
   const { projectId, employeeId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tasks, setTasks] = useState([]);
   const [project, setProject] = useState(null);
   const [employee, setEmployee] = useState(null);
@@ -26,6 +27,31 @@ const EmployeeTasks = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [rejectingTaskId, setRejectingTaskId] = useState(null);
+  const taskRefs = useRef({});
+
+  // Add this effect to scroll to task when page loads
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const taskIdToScroll = params.get('task');
+    
+    if (taskIdToScroll && taskRefs.current[taskIdToScroll]) {
+      setTimeout(() => {
+        taskRefs.current[taskIdToScroll].scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+        
+        const taskElement = taskRefs.current[taskIdToScroll];
+        taskElement.classList.add('border-2', 'border-dimo-blue', 'ring-2', 'ring-blue-200');
+        
+        setTimeout(() => {
+          taskElement.classList.remove('border-2', 'border-dimo-blue', 'ring-2', 'ring-blue-200');
+        }, 3000);
+        
+        navigate(`/admin/project/${projectId}/employee/${employeeId}`, { replace: true });
+      }, 500);
+    }
+  }, [tasks, location.search, projectId, employeeId, navigate]);
 
   useEffect(() => {
     // Listen to project details in real-time
@@ -52,7 +78,6 @@ const EmployeeTasks = () => {
     fetchEmployee();
 
     // Listen to tasks for this employee in this project
-    // Query without the deleted filter to avoid composite index requirement
     const q = query(
       collection(db, "tasks"),
       where("projectId", "==", projectId),
@@ -65,7 +90,7 @@ const EmployeeTasks = () => {
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((task) => !task.deleted); // Filter deleted tasks in memory
+        .filter((task) => !task.deleted);
       setTasks(tasksData);
     });
 
@@ -128,7 +153,7 @@ const EmployeeTasks = () => {
       await updateDoc(doc(db, "tasks", taskId), {
         approved: true,
         rejectionReason: null,
-        employeeNotification: {  // ADD THIS
+        employeeNotification: {
           status: "approved",
           message: `Your task "${taskData.name}" has been approved by admin`,
           createdAt: new Date().toISOString(),
@@ -158,7 +183,6 @@ const EmployeeTasks = () => {
 
     if (confirmDelete) {
       try {
-        // Soft delete - mark as deleted instead of actually deleting
         await updateDoc(doc(db, "tasks", taskId), {
           deleted: true,
           deletedAt: new Date().toISOString(),
@@ -263,6 +287,7 @@ const EmployeeTasks = () => {
               return (
                 <div
                   key={task.id}
+                  ref={(el) => (taskRefs.current[task.id] = el)}
                   className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
                 >
                   {/* Card Header */}
@@ -467,7 +492,7 @@ const EmployeeTasks = () => {
                           <span>Edit</span>
                         </button>
 
-                        {/* Delete button - Now available for all tasks */}
+                        {/* Delete button */}
                         <button
                           onClick={() => handleDeleteTask(task.id, task.name)}
                           className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 rounded hover:bg-red-50 transition text-sm"
@@ -568,10 +593,10 @@ const RejectTaskModal = ({ taskId, onClose }) => {
     setLoading(true);
 
     try {
-      const taskDoc = await getDoc(doc(db, "tasks", taskId)); // CHANGED: rejectingTaskId -> taskId
+      const taskDoc = await getDoc(doc(db, "tasks", taskId));
       const taskData = taskDoc.data();
       
-      await updateDoc(doc(db, "tasks", taskId), { // CHANGED: rejectingTaskId -> taskId
+      await updateDoc(doc(db, "tasks", taskId), {
         status: "not-started",
         approved: false,
         rejectionReason: rejectionReason,
@@ -753,7 +778,6 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
         targetDate: taskData.targetDate,
         assignedTo: selectedEmployees,
         areaIds: selectedAreas,
-        // ADD THIS - Notification for task update
         employeeNotification: {
           status: "updated",
           message: `Task "${taskData.name}" has been updated by admin`,
@@ -1166,7 +1190,6 @@ const CreateTaskModal = ({
         rejectionReason: null,
         holdReason: null,
         remarksChat: [],
-        // ADD THIS - Notification for task creation
         employeeNotification: {
           status: "created",
           message: `New task "${taskData.name}" has been assigned to you`,
