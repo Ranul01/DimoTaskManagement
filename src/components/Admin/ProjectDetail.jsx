@@ -175,15 +175,15 @@ const ProjectDetail = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Compact Header - Back Button and Project Name on Same Line */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 relative">
-          <div className="flex items-center justify-between gap-4">
+        <div className="bg-white rounded-lg shadow-sm p-3 mb-4 relative">
+          <div className="flex items-center justify-between gap-3">
             {/* Left: Back Button + Project Info */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <button
                 onClick={() => navigate("/admin")}
-                className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                className="flex-shrink-0 p-1.5 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
                 title="Back to Dashboard"
               >
                 <svg
@@ -203,10 +203,10 @@ const ProjectDetail = () => {
               </button>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                <h1 className="text-lg font-semibold text-dimo-blue truncate">
                   {project.name}
                 </h1>
-                <p className="text-gray-500 text-xs mt-0.5">
+                <p className="text-gray-500 text-[10px] mt-0.5">
                   Created {new Date(project.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -216,7 +216,7 @@ const ProjectDetail = () => {
             <div className="relative flex-shrink-0" ref={projectMenuRef}>
               <button
                 onClick={handleProjectMenuToggle}
-                className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition duration-200"
+                className="bg-gray-100 text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition duration-200"
                 title="Options"
               >
                 <svg
@@ -294,27 +294,27 @@ const ProjectDetail = () => {
           </div>
         </div>
 
-        {/* View Title and Add Button */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">
+        {/* View Title and Add Button - VERY COMPACT */}
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-base font-semibold text-gray-800">
             {getViewTitle()}
           </h2>
           {currentView === "area" && (
             <button
               onClick={() => setShowCreateTaskModal(true)}
-              className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+              className="bg-dimo-blue text-white px-3 py-1.5 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-1.5 text-sm"
             >
-              <span className="text-lg">+</span>
-              <span className=" sm:inline">Add Area</span>
+              <span className="text-base">+</span>
+              <span className="sm:inline">Add Area</span>
             </button>
           )}
           {currentView !== "area" && (
             <button
               onClick={() => setShowCreateTaskModal(true)}
-              className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+              className="bg-dimo-blue text-white px-3 py-1.5 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-1.5 text-sm"
             >
-              <span className="text-lg">+</span>
-              <span className=" sm:inline">Add Task</span>
+              <span className="text-base">+</span>
+              <span className="sm:inline">Add Task</span>
             </button>
           )}
         </div>
@@ -585,8 +585,8 @@ const AreaWiseView = ({
         }
       `}</style>
 
-      <div className="md:hidden text-center mb-4">
-        <p className="text-sm text-gray-500">← Swipe to view all areas →</p>
+      <div className="md:hidden text-center mb-2">
+        <p className="text-xs text-gray-500">← Swipe to view all areas →</p>
       </div>
 
       <div className="relative">
@@ -677,7 +677,7 @@ const AreaWiseView = ({
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden min-h-[350px] flex flex-col">
+                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden h-[450px] flex flex-col">
                   <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-3 relative flex-shrink-0">
                     <h3 className="text-base font-bold text-white pr-10 truncate">
                       {area.name}
@@ -761,9 +761,9 @@ const AreaWiseView = ({
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto tasks-scroll flex flex-col">
+                  <div className="flex-1 overflow-y-auto tasks-scroll">
                     {getTasksForArea(area.id).length === 0 ? (
-                      <div className="flex flex-col items-center justify-center flex-1 p-3">
+                      <div className="flex flex-col items-center justify-center h-full p-3">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -829,13 +829,11 @@ const AreaWiseView = ({
                     )}
                   </div>
 
-                  {getTasksForArea(area.id).length > 0 && (
-                    <div className="pt-2 px-3 pb-3 border-t border-gray-200 text-center flex-shrink-0">
-                      <p className="text-[10px] text-gray-500 font-medium">
-                        {getTasksForArea(area.id).length} task(s)
-                      </p>
-                    </div>
-                  )}
+                  <div className="pt-2 px-3 pb-3 border-t border-gray-200 text-center flex-shrink-0">
+                    <p className="text-[10px] text-gray-500 font-medium">
+                      {getTasksForArea(area.id).length} task(s)
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -958,8 +956,8 @@ const UserWiseView = ({
         }
       `}</style>
 
-      <div className="md:hidden text-center mb-4">
-        <p className="text-sm text-gray-500">← Swipe to view all users →</p>
+      <div className="md:hidden text-center mb-4 mt-4">
+        <p className="text-xs text-gray-500">← Swipe to view all users →</p>
       </div>
 
       <div className="relative">
@@ -967,7 +965,7 @@ const UserWiseView = ({
           <>
             <button
               onClick={() => scroll("left")}
-              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -986,7 +984,7 @@ const UserWiseView = ({
             </button>
             <button
               onClick={() => scroll("right")}
-              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1021,7 +1019,7 @@ const UserWiseView = ({
                 key={employee.id}
                 className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] snap-center user-card"
               >
-                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden min-h-[350px] flex flex-col">
+                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden h-[450px] flex flex-col">
                   {/* Employee Header */}
                   <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark text-white p-3 flex-shrink-0">
                     <div className="flex items-center space-x-2">
@@ -1046,10 +1044,10 @@ const UserWiseView = ({
                     </div>
                   </div>
 
-                  {/* Tasks List */}
-                  <div className="flex-1 overflow-y-auto flex flex-col p-3">
+                  {/* Tasks List - Scrollable */}
+                  <div className="flex-1 overflow-y-auto tasks-scroll">
                     {employeeTasks.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center flex-1">
+                      <div className="flex flex-col items-center justify-center h-full p-3">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-10 w-10 text-gray-300 mb-2"
@@ -1069,7 +1067,7 @@ const UserWiseView = ({
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="p-3 space-y-2">
                         {employeeTasks.map((task) => {
                           const statusInfo = getStatusInfo(
                             task.status,

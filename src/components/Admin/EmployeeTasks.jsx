@@ -303,10 +303,10 @@ const EmployeeTasks = () => {
                   ref={(el) => (taskRefs.current[task.id] = el)}
                   className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
                 >
-                  {/* Card Header */}
-                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-lg font-bold text-white truncate flex-1">
+                  {/* Card Header - COMPACT VERSION */}
+                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-base font-bold text-white truncate flex-1">
                         {task.name}
                       </h3>
                       
@@ -317,12 +317,12 @@ const EmployeeTasks = () => {
                           setSelectedTaskForChat(task);
                           setShowChatModal(true);
                         }}
-                        className="relative flex-shrink-0 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition"
+                        className="relative flex-shrink-0 p-1.5 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition"
                         title="Open chat"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
+                          className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -335,21 +335,25 @@ const EmployeeTasks = () => {
                           />
                         </svg>
                         {hasUnreadChatMessages(task) && (
-                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-white animate-pulse"></span>
                         )}
                       </button>
                     </div>
-                    
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-4 space-y-3">
+                    {/* Area Tags - Moved to Body */}
                     {areaNames.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {areaNames.map((areaName, index) => (
                           <div
                             key={index}
-                            className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
+                            className="flex items-center space-x-1 bg-blue-50 border border-blue-200 rounded-full px-2.5 py-1"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 text-blue-100"
+                              className="h-3 w-3 text-dimo-blue"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -367,17 +371,14 @@ const EmployeeTasks = () => {
                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                               />
                             </svg>
-                            <span className="text-xs text-white font-medium">
+                            <span className="text-xs text-dimo-blue font-medium">
                               {areaName}
                             </span>
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
 
-                  {/* Card Body */}
-                  <div className="p-4 space-y-3">
                     {/* Created Date */}
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600">
@@ -392,7 +393,7 @@ const EmployeeTasks = () => {
                     {task.details && (
                       <div className="mt-4">
                         <span className="text-sm font-medium text-gray-600">
-                          Task Details:
+                          Task Description:
                         </span>
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -912,7 +913,7 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
                 {/* Task Details */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Task Details
+                    Task Description
                   </label>
                   <textarea
                     value={taskData.details}
@@ -1348,7 +1349,7 @@ const CreateTaskModal = ({
                 {/* Task Details */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Task Details
+                    Task Description
                   </label>
                   <textarea
                     value={taskData.details}
