@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   collection,
   query,
@@ -14,10 +14,12 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import Navbar from "../Layout/Navbar";
+import TaskChat from "../shared/TaskChat";
 
 const EmployeeTasks = () => {
   const { projectId, employeeId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tasks, setTasks] = useState([]);
   const [project, setProject] = useState(null);
   const [employee, setEmployee] = useState(null);
@@ -26,6 +28,33 @@ const EmployeeTasks = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [rejectingTaskId, setRejectingTaskId] = useState(null);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedTaskForChat, setSelectedTaskForChat] = useState(null);
+  const taskRefs = useRef({});
+
+  // Add this effect to scroll to task when page loads
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const taskIdToScroll = params.get('task');
+    
+    if (taskIdToScroll && taskRefs.current[taskIdToScroll]) {
+      setTimeout(() => {
+        taskRefs.current[taskIdToScroll].scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+        
+        const taskElement = taskRefs.current[taskIdToScroll];
+        taskElement.classList.add('border-2', 'border-dimo-blue', 'ring-2', 'ring-blue-200');
+        
+        setTimeout(() => {
+          taskElement.classList.remove('border-2', 'border-dimo-blue', 'ring-2', 'ring-blue-200');
+        }, 3000);
+        
+        navigate(`/admin/project/${projectId}/employee/${employeeId}`, { replace: true });
+      }, 500);
+    }
+  }, [tasks, location.search, projectId, employeeId, navigate]);
 
   useEffect(() => {
     // Listen to project details in real-time
@@ -52,7 +81,6 @@ const EmployeeTasks = () => {
     fetchEmployee();
 
     // Listen to tasks for this employee in this project
-    // Query without the deleted filter to avoid composite index requirement
     const q = query(
       collection(db, "tasks"),
       where("projectId", "==", projectId),
@@ -65,7 +93,7 @@ const EmployeeTasks = () => {
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((task) => !task.deleted); // Filter deleted tasks in memory
+        .filter((task) => !task.deleted);
       setTasks(tasksData);
     });
 
@@ -128,7 +156,7 @@ const EmployeeTasks = () => {
       await updateDoc(doc(db, "tasks", taskId), {
         approved: true,
         rejectionReason: null,
-        employeeNotification: {  // ADD THIS
+        employeeNotification: {
           status: "approved",
           message: `Your task "${taskData.name}" has been approved by admin`,
           createdAt: new Date().toISOString(),
@@ -158,11 +186,12 @@ const EmployeeTasks = () => {
 
     if (confirmDelete) {
       try {
-        // Soft delete - mark as deleted instead of actually deleting
         await updateDoc(doc(db, "tasks", taskId), {
           deleted: true,
           deletedAt: new Date().toISOString(),
           deletedBy: "admin",
+          taskChat: [], // Clear task chat history
+          chatNotification: null, // Clear chat notification
           statusHistory: arrayUnion({
             status: "deleted",
             changedBy: "admin",
@@ -180,6 +209,14 @@ const EmployeeTasks = () => {
   const handleEditTask = (task) => {
     setEditingTask(task);
     setShowEditModal(true);
+  };
+
+  // Add function to check for unread chat messages
+  const hasUnreadChatMessages = (task) => {
+    if (!task.taskChat || task.taskChat.length === 0) return false;
+    return task.taskChat.some(
+      (msg) => msg.senderRole === "employee" && !msg.adminRead
+    );
   };
 
   return (
@@ -263,23 +300,60 @@ const EmployeeTasks = () => {
               return (
                 <div
                   key={task.id}
+                  ref={(el) => (taskRefs.current[task.id] = el)}
                   className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
                 >
-                  {/* Card Header */}
-                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4">
-                    <h3 className="text-lg font-bold text-white truncate">
-                      {task.name}
-                    </h3>
+                  {/* Card Header - COMPACT VERSION */}
+                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-base font-bold text-white truncate flex-1">
+                        {task.name}
+                      </h3>
+                      
+                      {/* Chat Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTaskForChat(task);
+                          setShowChatModal(true);
+                        }}
+                        className="relative flex-shrink-0 p-1.5 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition"
+                        title="Open chat"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          />
+                        </svg>
+                        {hasUnreadChatMessages(task) && (
+                          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-white animate-pulse"></span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-4 space-y-3">
+                    {/* Area Tags - Moved to Body */}
                     {areaNames.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {areaNames.map((areaName, index) => (
                           <div
                             key={index}
-                            className="flex items-center space-x-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
+                            className="flex items-center space-x-1 bg-blue-50 border border-blue-200 rounded-full px-2.5 py-1"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 text-blue-100"
+                              className="h-3 w-3 text-dimo-blue"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -297,17 +371,14 @@ const EmployeeTasks = () => {
                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                               />
                             </svg>
-                            <span className="text-xs text-white font-medium">
+                            <span className="text-xs text-dimo-blue font-medium">
                               {areaName}
                             </span>
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
 
-                  {/* Card Body */}
-                  <div className="p-4 space-y-3">
                     {/* Created Date */}
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600">
@@ -322,7 +393,7 @@ const EmployeeTasks = () => {
                     {task.details && (
                       <div className="mt-4">
                         <span className="text-sm font-medium text-gray-600">
-                          Task Details:
+                          Task Description:
                         </span>
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -467,7 +538,7 @@ const EmployeeTasks = () => {
                           <span>Edit</span>
                         </button>
 
-                        {/* Delete button - Now available for all tasks */}
+                        {/* Delete button */}
                         <button
                           onClick={() => handleDeleteTask(task.id, task.name)}
                           className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 rounded hover:bg-red-50 transition text-sm"
@@ -549,6 +620,18 @@ const EmployeeTasks = () => {
           }}
         />
       )}
+
+      {/* Chat Modal */}
+      {showChatModal && selectedTaskForChat && (
+        <TaskChat
+          taskId={selectedTaskForChat.id}
+          taskName={selectedTaskForChat.name}
+          onClose={() => {
+            setShowChatModal(false);
+            setSelectedTaskForChat(null);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -568,10 +651,10 @@ const RejectTaskModal = ({ taskId, onClose }) => {
     setLoading(true);
 
     try {
-      const taskDoc = await getDoc(doc(db, "tasks", taskId)); // CHANGED: rejectingTaskId -> taskId
+      const taskDoc = await getDoc(doc(db, "tasks", taskId));
       const taskData = taskDoc.data();
       
-      await updateDoc(doc(db, "tasks", taskId), { // CHANGED: rejectingTaskId -> taskId
+      await updateDoc(doc(db, "tasks", taskId), {
         status: "not-started",
         approved: false,
         rejectionReason: rejectionReason,
@@ -753,7 +836,6 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
         targetDate: taskData.targetDate,
         assignedTo: selectedEmployees,
         areaIds: selectedAreas,
-        // ADD THIS - Notification for task update
         employeeNotification: {
           status: "updated",
           message: `Task "${taskData.name}" has been updated by admin`,
@@ -831,7 +913,7 @@ const EditTaskModal = ({ task, projectId, projectAreas, onClose }) => {
                 {/* Task Details */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Task Details
+                    Task Description
                   </label>
                   <textarea
                     value={taskData.details}
@@ -1166,7 +1248,6 @@ const CreateTaskModal = ({
         rejectionReason: null,
         holdReason: null,
         remarksChat: [],
-        // ADD THIS - Notification for task creation
         employeeNotification: {
           status: "created",
           message: `New task "${taskData.name}" has been assigned to you`,
@@ -1268,7 +1349,7 @@ const CreateTaskModal = ({
                 {/* Task Details */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Task Details
+                    Task Description
                   </label>
                   <textarea
                     value={taskData.details}

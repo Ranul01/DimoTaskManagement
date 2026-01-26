@@ -12,6 +12,7 @@ import TaskDetail from "./components/Employee/TaskDetail";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import TaskHistory from "./components/Admin/TaskHistory";
 import EmployeeTaskHistory from "./components/Employee/EmployeeTaskHistory";
+import Settings from "./components/Admin/Settings";
 
 function App() {
   return (
@@ -83,6 +84,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <TaskHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute allowedRole="admin">
+            <Settings />
           </ProtectedRoute>
         }
       />
