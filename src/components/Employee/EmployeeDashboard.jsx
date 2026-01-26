@@ -8,7 +8,6 @@ import {
   doc,
   getDoc,
   updateDoc,
-  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
@@ -43,7 +42,7 @@ const EmployeeDashboard = () => {
       setProjects(projectsData);
     });
 
-    // Listen to all tasks assigned to this employee - remove deleted filter from query
+    // Listen to all tasks assigned to this employee
     const tasksQuery = query(
       collection(db, "tasks"),
       where("assignedTo", "array-contains", currentUser.uid),
@@ -55,7 +54,7 @@ const EmployeeDashboard = () => {
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((task) => !task.deleted); // Filter deleted tasks in memory
+        .filter((task) => !task.deleted);
       setAllTasks(tasksData);
     });
 
@@ -85,45 +84,10 @@ const EmployeeDashboard = () => {
     return allTasks.some((task) => task.projectId === project.id);
   });
 
-  // Get tasks with unread admin messages
-  const getTasksWithUnreadMessages = () => {
-    return allTasks
-      .filter((task) => {
-        if (!task.remarksChat || task.remarksChat.length === 0) return false;
-
-        // Check if there are any unread messages from admin
-        return task.remarksChat.some(
-          (msg) => msg.senderRole === "admin" && !msg.employeeRead,
-        );
-      })
-      .map((task) => {
-        const unreadCount = task.remarksChat.filter(
-          (msg) => msg.senderRole === "admin" && !msg.employeeRead,
-        ).length;
-
-        const latestUnreadMsg = task.remarksChat
-          .filter((msg) => msg.senderRole === "admin" && !msg.employeeRead)
-          .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt))[0];
-
-        return {
-          ...task,
-          unreadCount,
-          latestUnreadMsg,
-        };
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.latestUnreadMsg.sentAt) -
-          new Date(a.latestUnreadMsg.sentAt),
-      );
-  };
-
   const getTasksWithStatusNotifications = () => {
-    console.log("All tasks:", allTasks); // DEBUG
-
     const filtered = allTasks.filter((task) => {
+      // Check for unread status notifications
       if (task.employeeNotification && !task.employeeNotification.read) {
-        console.log("Found notification:", task.employeeNotification); // DEBUG
         return (
           task.employeeNotification.status === "approved" ||
           task.employeeNotification.status === "rejected" ||
@@ -132,16 +96,15 @@ const EmployeeDashboard = () => {
         );
       }
 
-      if (task.remarksChat && task.remarksChat.length > 0) {
-        return task.remarksChat.some(
+      // Check for unread chat messages - FIXED: Changed from remarksChat to taskChat
+      if (task.taskChat && task.taskChat.length > 0) {
+        return task.taskChat.some(
           (msg) => msg.senderRole === "admin" && !msg.employeeRead,
         );
       }
 
       return false;
     });
-
-    console.log("Filtered notifications:", filtered); // DEBUG
 
     return filtered
       .map((task) => {
@@ -151,11 +114,12 @@ const EmployeeDashboard = () => {
 
         // Prioritize status notifications over chat
         if (task.employeeNotification && !task.employeeNotification.read) {
-          notificationType = task.employeeNotification.status; // Can be: approved, rejected, created, updated
+          notificationType = task.employeeNotification.status;
           notificationMessage = task.employeeNotification.message;
           timestamp = new Date(task.employeeNotification.createdAt);
-        } else if (task.remarksChat && task.remarksChat.length > 0) {
-          const unreadMessages = task.remarksChat.filter(
+        } else if (task.taskChat && task.taskChat.length > 0) {
+          // FIXED: Changed from remarksChat to taskChat
+          const unreadMessages = task.taskChat.filter(
             (msg) => msg.senderRole === "admin" && !msg.employeeRead,
           );
 
@@ -189,9 +153,9 @@ const EmployeeDashboard = () => {
         count++;
       }
 
-      // Count chat notifications
-      if (task.remarksChat) {
-        const unreadMessages = task.remarksChat.filter(
+      // Count chat notifications - FIXED: Changed from remarksChat to taskChat
+      if (task.taskChat) {
+        const unreadMessages = task.taskChat.filter(
           (msg) => msg.senderRole === "admin" && !msg.employeeRead,
         ).length;
         count += unreadMessages;
@@ -219,64 +183,26 @@ const EmployeeDashboard = () => {
       }
     }
 
+    // Mark chat messages as read - FIXED: Changed from remarksChat to taskChat
+    if (task.taskChat && task.taskChat.length > 0) {
+      const updatedChat = task.taskChat.map((msg) => ({
+        ...msg,
+        employeeRead: msg.senderRole === "admin" ? true : msg.employeeRead,
+      }));
+
+      try {
+        await updateDoc(doc(db, "tasks", task.id), {
+          taskChat: updatedChat,
+        });
+      } catch (error) {
+        console.error("Error marking chat messages as read:", error);
+      }
+    }
+
     navigate(`/employee/task/${task.id}`);
     setShowNotifications(false);
   };
 
-  const handleApprove = async (taskId) => {
-    try {
-      const taskDoc = await getDoc(doc(db, "tasks", taskId));
-      const taskData = taskDoc.data();
-
-      await updateDoc(doc(db, "tasks", taskId), {
-        approved: true,
-        rejectionReason: null,
-        employeeNotification: {
-          status: "approved",
-          message: `Your task "${taskData.name}" has been approved by admin`,
-          createdAt: new Date().toISOString(),
-          read: false,
-        },
-        statusHistory: arrayUnion({
-          status: "approved",
-          changedBy: "admin",
-          changedAt: new Date().toISOString(),
-          note: "Task approved by admin",
-        }),
-      });
-    } catch (error) {
-      console.error("Error approving task:", error);
-    }
-  };
-
-  const handleReject = async (taskId, rejectionReason) => {
-    try {
-      const taskDoc = await getDoc(doc(db, "tasks", taskId));
-      const taskData = taskDoc.data();
-
-      await updateDoc(doc(db, "tasks", taskId), {
-        status: "not-started",
-        approved: false,
-        rejectionReason: rejectionReason,
-        employeeNotification: {
-          status: "rejected",
-          message: rejectionReason,
-          createdAt: new Date().toISOString(),
-          read: false,
-        },
-        statusHistory: arrayUnion({
-          status: "rejected",
-          changedBy: "admin",
-          changedAt: new Date().toISOString(),
-          note: `Rejected: ${rejectionReason}`,
-        }),
-      });
-    } catch (error) {
-      console.error("Error rejecting task:", error);
-    }
-  };
-
-  const tasksWithUnread = getTasksWithUnreadMessages();
   const tasksWithStatusNotifications = getTasksWithStatusNotifications();
   const totalUnread = getTotalUnreadCount();
 
@@ -382,7 +308,6 @@ const EmployeeDashboard = () => {
                         tasksWithStatusNotifications.map((task) => {
                           const project = getProjectForTask(task);
 
-                          // Determine icon and colors based on notification type
                           const getNotificationStyle = () => {
                             switch (task.notificationType) {
                               case "approved":
@@ -427,7 +352,7 @@ const EmployeeDashboard = () => {
                                   ),
                                   label: "Task Rejected",
                                 };
-                              case "created": // ADD THIS
+                              case "created":
                                 return {
                                   bgColor: "bg-blue-500",
                                   icon: (
@@ -448,7 +373,7 @@ const EmployeeDashboard = () => {
                                   ),
                                   label: "New Task Assigned",
                                 };
-                              case "updated": // ADD THIS
+                              case "updated":
                                 return {
                                   bgColor: "bg-orange-500",
                                   icon: (
@@ -469,6 +394,27 @@ const EmployeeDashboard = () => {
                                   ),
                                   label: "Task Updated",
                                 };
+                              case "message":
+                                return {
+                                  bgColor: "bg-purple-500",
+                                  icon: (
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                      />
+                                    </svg>
+                                  ),
+                                  label: "New Chat Message",
+                                };
                               default:
                                 return {
                                   bgColor: "bg-purple-500",
@@ -487,7 +433,6 @@ const EmployeeDashboard = () => {
                               className="p-4 border-b border-gray-100 hover:bg-purple-50 cursor-pointer transition"
                             >
                               <div className="flex items-start space-x-3">
-                                {/* Admin/Status Avatar */}
                                 <div
                                   className={`w-10 h-10 ${style.bgColor} rounded-full flex items-center justify-center flex-shrink-0`}
                                 >
@@ -502,7 +447,6 @@ const EmployeeDashboard = () => {
                                   )}
                                 </div>
 
-                                {/* Notification Content */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
                                     <div className="flex-1">
@@ -513,11 +457,9 @@ const EmployeeDashboard = () => {
                                         {style.label}
                                       </p>
                                     </div>
-                                    {task.notificationType !== "message" && (
-                                      <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                                        1
-                                      </span>
-                                    )}
+                                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                                      1
+                                    </span>
                                   </div>
                                   <p className="text-xs text-gray-500 mb-1">
                                     Task: {task.name}

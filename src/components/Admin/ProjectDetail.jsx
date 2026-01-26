@@ -175,15 +175,15 @@ const ProjectDetail = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Compact Header - Back Button and Project Name on Same Line */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 relative">
-          <div className="flex items-center justify-between gap-4">
+        <div className="bg-white rounded-lg shadow-sm p-3 mb-4 relative">
+          <div className="flex items-center justify-between gap-3">
             {/* Left: Back Button + Project Info */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <button
                 onClick={() => navigate("/admin")}
-                className="flex-shrink-0 p-2 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                className="flex-shrink-0 p-1.5 text-dimo-blue hover:text-dimo-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
                 title="Back to Dashboard"
               >
                 <svg
@@ -203,10 +203,10 @@ const ProjectDetail = () => {
               </button>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-semibold text-dimo-blue truncate">
+                <h1 className="text-lg font-semibold text-dimo-blue truncate">
                   {project.name}
                 </h1>
-                <p className="text-gray-500 text-xs mt-0.5">
+                <p className="text-gray-500 text-[10px] mt-0.5">
                   Created {new Date(project.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -216,7 +216,7 @@ const ProjectDetail = () => {
             <div className="relative flex-shrink-0" ref={projectMenuRef}>
               <button
                 onClick={handleProjectMenuToggle}
-                className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition duration-200"
+                className="bg-gray-100 text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition duration-200"
                 title="Options"
               >
                 <svg
@@ -294,27 +294,27 @@ const ProjectDetail = () => {
           </div>
         </div>
 
-        {/* View Title and Add Button */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">
+        {/* View Title and Add Button - VERY COMPACT */}
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-base font-semibold text-gray-800">
             {getViewTitle()}
           </h2>
           {currentView === "area" && (
             <button
               onClick={() => setShowCreateTaskModal(true)}
-              className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+              className="bg-dimo-blue text-white px-3 py-1.5 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-1.5 text-sm"
             >
-              <span className="text-lg">+</span>
-              <span className=" sm:inline">Add Area</span>
+              <span className="text-base">+</span>
+              <span className="sm:inline">Add Area</span>
             </button>
           )}
           {currentView !== "area" && (
             <button
               onClick={() => setShowCreateTaskModal(true)}
-              className="bg-dimo-blue text-white px-4 py-2 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-2"
+              className="bg-dimo-blue text-white px-3 py-1.5 rounded-lg hover:bg-dimo-dark transition duration-200 flex items-center space-x-1.5 text-sm"
             >
-              <span className="text-lg">+</span>
-              <span className=" sm:inline">Add Task</span>
+              <span className="text-base">+</span>
+              <span className="sm:inline">Add Task</span>
             </button>
           )}
         </div>
@@ -432,7 +432,7 @@ const AreaWiseView = ({
 
   const handleTaskClick = (e, taskId, employeeId) => {
     e.stopPropagation();
-    navigate(`/admin/project/${projectId}/employee/${employeeId}`);
+    navigate(`/admin/project/${projectId}/employee/${employeeId}?task=${taskId}`);
   };
 
   const handleAddArea = async () => {
@@ -585,8 +585,8 @@ const AreaWiseView = ({
         }
       `}</style>
 
-      <div className="md:hidden text-center mb-4">
-        <p className="text-sm text-gray-500">← Swipe to view all areas →</p>
+      <div className="md:hidden text-center mb-2">
+        <p className="text-xs text-gray-500">← Swipe to view all areas →</p>
       </div>
 
       <div className="relative">
@@ -640,10 +640,10 @@ const AreaWiseView = ({
           {areas.map((area) => (
             <div
               key={area.id}
-              className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(65%-12px)] lg:w-[calc(45%-16px)] snap-center area-card"
+              className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] snap-center area-card"
             >
               {editingArea === area.id ? (
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-dimo-blue min-h-[400px] md:min-h-[500px] flex flex-col p-6">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-dimo-blue min-h-[350px] flex flex-col p-6">
                   <div className="mb-4">
                     <h3 className="text-lg font-bold text-dimo-blue mb-4">
                       Edit Area
@@ -677,24 +677,24 @@ const AreaWiseView = ({
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden min-h-[400px] md:min-h-[500px] flex flex-col">
-                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-4 relative flex-shrink-0">
-                    <h3 className="text-lg font-bold text-white pr-10 truncate">
+                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden h-[450px] flex flex-col">
+                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark p-3 relative flex-shrink-0">
+                    <h3 className="text-base font-bold text-white pr-10 truncate">
                       {area.name}
                     </h3>
 
                     <div
-                      className="absolute top-3 right-3"
+                      className="absolute top-2 right-2"
                       ref={(el) => (menuRefs.current[area.id] = el)}
                     >
                       <button
                         onClick={(e) => handleMenuToggle(e, area.id)}
-                        className="bg-white bg-opacity-20 text-white p-2 rounded-full hover:bg-opacity-30 active:bg-opacity-40 transition duration-200 touch-manipulation"
+                        className="bg-white bg-opacity-20 text-white p-1.5 rounded-full hover:bg-opacity-30 active:bg-opacity-40 transition duration-200 touch-manipulation"
                         title="Options"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
+                          className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -761,13 +761,13 @@ const AreaWiseView = ({
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto tasks-scroll flex flex-col">
+                  <div className="flex-1 overflow-y-auto tasks-scroll">
                     {getTasksForArea(area.id).length === 0 ? (
-                      <div className="flex flex-col items-center justify-center flex-1 p-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                      <div className="flex flex-col items-center justify-center h-full p-3">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-8 w-8 text-gray-400"
+                            className="h-6 w-6 text-gray-400"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -780,12 +780,12 @@ const AreaWiseView = ({
                             />
                           </svg>
                         </div>
-                        <p className="text-sm text-gray-500 text-center">
+                        <p className="text-xs text-gray-500 text-center">
                           No tasks assigned
                         </p>
                       </div>
                     ) : (
-                      <div className="p-4 space-y-2">
+                      <div className="p-3 space-y-2">
                         {getTasksForArea(area.id).map((task) => {
                           const statusInfo = getStatusInfo(
                             task.status,
@@ -802,14 +802,14 @@ const AreaWiseView = ({
                               onClick={(e) =>
                                 handleTaskClick(e, task.id, firstEmployeeId)
                               }
-                              className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100"
+                              className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100"
                             >
-                              <div className="flex items-start justify-between mb-2 gap-2">
+                              <div className="flex items-start justify-between mb-1.5 gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-semibold text-gray-800 line-clamp-2">
+                                  <h4 className="text-xs font-semibold text-gray-800 line-clamp-2">
                                     {task.name}
                                   </h4>
-                                  <p className="text-xs text-gray-500 mt-1">
+                                  <p className="text-[10px] text-gray-500 mt-0.5 truncate">
                                     Assigned to:{" "}
                                     <span className="font-medium text-dimo-blue">
                                       {assignees || "Unassigned"}
@@ -817,7 +817,7 @@ const AreaWiseView = ({
                                   </p>
                                 </div>
                                 <div
-                                  className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}
+                                  className={`${statusInfo.color} text-white text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
                                 >
                                   {statusInfo.label}
                                 </div>
@@ -829,13 +829,11 @@ const AreaWiseView = ({
                     )}
                   </div>
 
-                  {getTasksForArea(area.id).length > 0 && (
-                    <div className="pt-3 px-4 pb-4 border-t border-gray-200 text-center flex-shrink-0">
-                      <p className="text-xs text-gray-500 font-medium">
-                        {getTasksForArea(area.id).length} task(s)
-                      </p>
-                    </div>
-                  )}
+                  <div className="pt-2 px-3 pb-3 border-t border-gray-200 text-center flex-shrink-0">
+                    <p className="text-[10px] text-gray-500 font-medium">
+                      {getTasksForArea(area.id).length} task(s)
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -958,8 +956,8 @@ const UserWiseView = ({
         }
       `}</style>
 
-      <div className="md:hidden text-center mb-4">
-        <p className="text-sm text-gray-500">← Swipe to view all users →</p>
+      <div className="md:hidden text-center mb-4 mt-4">
+        <p className="text-xs text-gray-500">← Swipe to view all users →</p>
       </div>
 
       <div className="relative">
@@ -967,7 +965,7 @@ const UserWiseView = ({
           <>
             <button
               onClick={() => scroll("left")}
-              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -986,7 +984,7 @@ const UserWiseView = ({
             </button>
             <button
               onClick={() => scroll("right")}
-              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1019,40 +1017,40 @@ const UserWiseView = ({
             return (
               <div
                 key={employee.id}
-                className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(65%-12px)] lg:w-[calc(45%-16px)] snap-center user-card"
+                className="flex-shrink-0 w-[95%] sm:w-[75%] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] snap-center user-card"
               >
-                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden min-h-[400px] md:min-h-[500px] flex flex-col">
+                <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden h-[450px] flex flex-col">
                   {/* Employee Header */}
-                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark text-white p-4 flex-shrink-0">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg font-bold text-dimo-blue">
+                  <div className="bg-gradient-to-r from-dimo-blue to-dimo-dark text-white p-3 flex-shrink-0">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-base font-bold text-dimo-blue">
                           {getInitials(employee.name)}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold truncate text-white">
+                        <h4 className="font-semibold truncate text-white text-sm">
                           {employee.name}
                         </h4>
-                        <p className="text-sm text-blue-100 truncate">
+                        <p className="text-xs text-blue-100 truncate">
                           {employee.email}
                         </p>
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white border-opacity-30">
-                      <span className="text-xs font-semibold text-blue-100 bg-white bg-opacity-20 px-3 py-1 rounded-full inline-block">
+                    <div className="mt-2 pt-2 border-t border-white border-opacity-30">
+                      <span className="text-[10px] font-semibold text-blue-100 bg-white bg-opacity-20 px-2 py-0.5 rounded-full inline-block">
                         {employeeTasks.length} task(s)
                       </span>
                     </div>
                   </div>
 
-                  {/* Tasks List */}
-                  <div className="flex-1 overflow-y-auto flex flex-col p-4">
+                  {/* Tasks List - Scrollable */}
+                  <div className="flex-1 overflow-y-auto tasks-scroll">
                     {employeeTasks.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center flex-1">
+                      <div className="flex flex-col items-center justify-center h-full p-3">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-12 w-12 text-gray-300 mb-3"
+                          className="h-10 w-10 text-gray-300 mb-2"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -1064,12 +1062,12 @@ const UserWiseView = ({
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                           />
                         </svg>
-                        <p className="text-sm text-gray-500 text-center">
+                        <p className="text-xs text-gray-500 text-center">
                           No tasks assigned
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="p-3 space-y-2">
                         {employeeTasks.map((task) => {
                           const statusInfo = getStatusInfo(
                             task.status,
@@ -1082,14 +1080,14 @@ const UserWiseView = ({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(
-                                  `/admin/project/${projectId}/employee/${employee.id}`,
+                                  `/admin/project/${projectId}/employee/${employee.id}?task=${task.id}`,
                                 );
                               }}
-                              className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-dimo-blue"
+                              className="bg-white rounded-lg border border-gray-200 p-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-dimo-blue"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <h5 className="text-sm font-semibold text-gray-800 mb-2">
+                                  <h5 className="text-xs font-semibold text-gray-800 mb-1.5 line-clamp-2">
                                     {task.name}
                                   </h5>
 
@@ -1105,11 +1103,11 @@ const UserWiseView = ({
                                         return (
                                           <div
                                             key={areaId}
-                                            className="flex items-center space-x-1 bg-blue-50 rounded-full px-2 py-0.5 border border-blue-200"
+                                            className="flex items-center space-x-1 bg-blue-50 rounded-full px-1.5 py-0.5 border border-blue-200"
                                           >
                                             <svg
                                               xmlns="http://www.w3.org/2000/svg"
-                                              className="h-3 w-3 text-dimo-blue flex-shrink-0"
+                                              className="h-2.5 w-2.5 text-dimo-blue flex-shrink-0"
                                               fill="none"
                                               viewBox="0 0 24 24"
                                               stroke="currentColor"
@@ -1127,7 +1125,7 @@ const UserWiseView = ({
                                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                                               />
                                             </svg>
-                                            <span className="text-xs font-medium text-dimo-blue">
+                                            <span className="text-[10px] font-medium text-dimo-blue">
                                               {area.name}
                                             </span>
                                           </div>
@@ -1138,7 +1136,7 @@ const UserWiseView = ({
                                 </div>
 
                                 <div
-                                  className={`${statusInfo.color} text-white text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0`}
+                                  className={`${statusInfo.color} text-white text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
                                 >
                                   {statusInfo.label}
                                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   doc,
@@ -6,12 +6,11 @@ import {
   updateDoc,
   arrayUnion,
   onSnapshot,
-  addDoc,
-  collection,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../Layout/Navbar";
+import TaskChat from "../shared/TaskChat";
 
 const TaskDetail = () => {
   const { taskId } = useParams();
@@ -25,6 +24,7 @@ const TaskDetail = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [pendingHoldReason, setPendingHoldReason] = useState("");
+  const [showChatModal, setShowChatModal] = useState(false);
 
   useEffect(() => {
     const fetchTaskData = async () => {
@@ -106,7 +106,7 @@ const TaskDetail = () => {
         const area = project.areas.find(a => a.id === areaId);
         return area?.name;
       })
-      .filter(name => name); // Remove undefined values
+      .filter(name => name);
   };
 
   // Helper function to get rejection date from status history
@@ -135,6 +135,14 @@ const TaskDetail = () => {
 
     const latestApproval = approvals[approvals.length - 1];
     return latestApproval.changedAt;
+  };
+
+  // Helper function to check for unread chat messages
+  const hasUnreadChatMessages = () => {
+    if (!task?.taskChat || task.taskChat.length === 0) return false;
+    return task.taskChat.some(
+      (msg) => msg.senderRole === "admin" && !msg.employeeRead
+    );
   };
 
   const handleStatusChange = (newStatus) => {
@@ -226,63 +234,6 @@ const TaskDetail = () => {
     }
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-
-  //   if (selectedEmployees.length === 0) {
-  //     alert("Please select at least one employee");
-  //     return;
-  //   }
-
-  //   if (selectedAreas.length === 0) {
-  //     alert("Please select at least one area");
-  //     return;
-  //   }
-
-  //   setLoading(true);
-
-  //   try {
-  //     const createdAtISO = new Date(taskData.createdDate).toISOString();
-
-  //     await addDoc(collection(db, "tasks"), {
-  //       name: taskData.name,
-  //       details: taskData.details,
-  //       projectId,
-  //       assignedTo: selectedEmployees,
-  //       areaIds: selectedAreas,
-  //       createdAt: createdAtISO,
-  //       targetDate: taskData.targetDate,
-  //       status: "not-started",
-  //       approved: false,
-  //       deleted: false,
-  //       rejectionReason: null,
-  //       holdReason: null,
-  //       remarksChat: [],
-  //       // ADD THIS - Notification for task creation
-  //       employeeNotification: {
-  //         status: "created",
-  //         message: `New task "${taskData.name}" has been assigned to you`,
-  //         createdAt: new Date().toISOString(),
-  //         read: false
-  //       },
-  //       statusHistory: [
-  //         {
-  //           status: "not-started",
-  //           changedBy: "admin",
-  //           changedAt: createdAtISO,
-  //           note: "Task created",
-  //         },
-  //       ],
-  //     });
-  //     onClose();
-  //   } catch (error) {
-  //     console.error("Error creating task:", error);
-  //     alert("Failed to create task");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -347,20 +298,47 @@ const TaskDetail = () => {
               </div>
             </div>
 
-            {hasChanges && (
+            <div className="flex items-center gap-2">
+              {/* Chat Button */}
               <button
-                onClick={handleSave}
-                disabled={updating}
-                className="px-4 py-2 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50 text-sm font-medium"
+                onClick={() => setShowChatModal(true)}
+                className="relative p-2 text-dimo-blue hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                title="Open chat with admin"
               >
-                {updating ? "Saving..." : "Save"}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                {hasUnreadChatMessages() && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                )}
               </button>
-            )}
+
+              {hasChanges && (
+                <button
+                  onClick={handleSave}
+                  disabled={updating}
+                  className="px-4 py-2 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50 text-sm font-medium"
+                >
+                  {updating ? "Saving..." : "Save"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Task Details Card - Keep existing structure but remove the redundant header */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {/* Task Details Card */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
           <div className="p-4 space-y-4">
             {/* Task Name */}
             <div>
@@ -654,6 +632,15 @@ const TaskDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Chat Modal */}
+      {showChatModal && task && (
+        <TaskChat
+          taskId={task.id}
+          taskName={task.name}
+          onClose={() => setShowChatModal(false)}
+        />
+      )}
     </div>
   );
 };

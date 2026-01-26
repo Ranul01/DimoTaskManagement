@@ -146,9 +146,9 @@ const AdminDashboard = () => {
           );
         }
 
-        // Also check for unread chat messages
-        if (task.remarksChat && task.remarksChat.length > 0) {
-          return task.remarksChat.some(
+        // Check for unread chat messages - FIXED: Changed from remarksChat to taskChat
+        if (task.taskChat && task.taskChat.length > 0) {
+          return task.taskChat.some(
             (msg) => msg.senderRole === "employee" && !msg.adminRead,
           );
         }
@@ -168,8 +168,9 @@ const AdminDashboard = () => {
               : "hold";
           notificationMessage = task.adminNotification.message;
           timestamp = new Date(task.adminNotification.createdAt);
-        } else if (task.remarksChat && task.remarksChat.length > 0) {
-          const unreadMessages = task.remarksChat.filter(
+        } else if (task.taskChat && task.taskChat.length > 0) {
+          // FIXED: Changed from remarksChat to taskChat
+          const unreadMessages = task.taskChat.filter(
             (msg) => msg.senderRole === "employee" && !msg.adminRead,
           );
 
@@ -180,6 +181,7 @@ const AdminDashboard = () => {
 
             notificationMessage = latestMsg.text;
             timestamp = new Date(latestMsg.sentAt);
+            notificationType = "chat"; // Add chat type
           }
         }
 
@@ -193,6 +195,26 @@ const AdminDashboard = () => {
       .sort((a, b) => b.notificationTimestamp - a.notificationTimestamp);
   };
 
+  // Update getTasksWithStatusNotifications function to include chat notifications
+  const getTasksWithChatNotifications = () => {
+    return allTasks.filter((task) => {
+      if (task.taskChat && task.taskChat.length > 0) {
+        return task.taskChat.some(
+          (msg) => msg.senderRole === "employee" && !msg.adminRead,
+        );
+      }
+      return false;
+    });
+  };
+
+  const tasksWithChatNotifications = getTasksWithChatNotifications();
+  const totalChatUnread = tasksWithChatNotifications.reduce((acc, task) => {
+    const unreadCount = task.taskChat.filter(
+      (msg) => msg.senderRole === "employee" && !msg.adminRead,
+    ).length;
+    return acc + unreadCount;
+  }, 0);
+
   const getTotalUnreadCount = () => {
     let count = 0;
 
@@ -202,16 +224,16 @@ const AdminDashboard = () => {
         count++;
       }
 
-      // Count chat notifications
-      if (task.remarksChat) {
-        const unreadMessages = task.remarksChat.filter(
+      // Count chat notifications - FIXED: Changed from remarksChat to taskChat
+      if (task.taskChat) {
+        const unreadMessages = task.taskChat.filter(
           (msg) => msg.senderRole === "employee" && !msg.adminRead,
         ).length;
         count += unreadMessages;
       }
     });
 
-    return count;
+    return count; // FIXED: Removed double counting
   };
 
   const getEmployeeForTask = (task) => {
@@ -235,7 +257,24 @@ const AdminDashboard = () => {
       }
     }
 
-    navigate(`/admin/project/${task.projectId}/employee/${employee.id}`);
+    // Mark all unread chat messages as read - FIXED: Changed from remarksChat to taskChat
+    if (task.taskChat && task.taskChat.length > 0) {
+      const updatedChat = task.taskChat.map((msg) => ({
+        ...msg,
+        adminRead: msg.senderRole === "employee" ? true : msg.adminRead,
+      }));
+
+      try {
+        await updateDoc(doc(db, "tasks", task.id), {
+          taskChat: updatedChat,
+        });
+      } catch (error) {
+        console.error("Error marking chat messages as read:", error);
+      }
+    }
+
+    // Navigate to the specific task with task ID in URL parameter
+    navigate(`/admin/project/${task.projectId}/employee/${employee.id}?task=${task.id}`);
     setShowNotifications(false);
   };
 
@@ -363,7 +402,7 @@ const AdminDashboard = () => {
                         tasksWithUnread.map((task) => {
                           const employee = getEmployeeForTask(task);
                           
-                          // Determine icon and colors based on notification type
+                          // REPLACE THIS ENTIRE FUNCTION (around line 434)
                           const getNotificationStyle = () => {
                             switch (task.notificationType) {
                               case "complete":
@@ -385,6 +424,16 @@ const AdminDashboard = () => {
                                     </svg>
                                   ),
                                   label: "Task On Hold"
+                                };
+                              case "chat": // ADD THIS CASE
+                                return {
+                                  bgColor: "bg-purple-500",
+                                  icon: (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                  ),
+                                  label: "New Chat Message"
                                 };
                               default:
                                 return {
