@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (email, password, name, role) => {
+  const register = async (email, password, name, role = "employee") => {
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
         email,
         role,
         createdAt: new Date().toISOString(),
+        firstTimeLogin: true, // ADD THIS LINE
       });
 
       return userCredential;
