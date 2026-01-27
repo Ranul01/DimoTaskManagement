@@ -389,7 +389,7 @@ const Login = () => {
           </form>
 
           {/* Register Link */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          {/* <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-center text-gray-600 text-sm">
               Don't have an account?{" "}
               <Link
@@ -399,7 +399,7 @@ const Login = () => {
                 Create Account
               </Link>
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}

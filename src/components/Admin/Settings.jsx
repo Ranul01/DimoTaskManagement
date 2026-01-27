@@ -6,13 +6,44 @@ import Navbar from "../Layout/Navbar";
 import {
   collection,
   query,
-  where,
   onSnapshot,
   doc,
   updateDoc,
   deleteDoc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase/config";
+import emailjs from '@emailjs/browser';
+import { initializeApp, deleteApp } from "firebase/app"; // Add deleteApp here
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+
+const sendWelcomeEmail = async (email, name, password, adminName, role) => {
+  try {
+    const templateParams = {
+      to_email: email,
+      to_name: name,
+      password: password,
+      admin_name: adminName,
+      role: role.charAt(0).toUpperCase() + role.slice(1),
+      app_url: window.location.origin,
+    };
+
+    emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
+
+    const response = await emailjs.send(
+      import.meta.env.VITE_EMAILJS_SERVICE_ID,
+      import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+      templateParams
+    );
+
+    console.log('Email sent successfully:', response);
+    return { success: true };
+  } catch (error) {
+    console.error('Email error:', error);
+    throw new Error('Failed to send welcome email: ' + error.text);
+  }
+};
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -20,6 +51,8 @@ const Settings = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [adminName, setAdminName] = useState("");
 
   // Redirect if not admin
   useEffect(() => {
@@ -27,6 +60,17 @@ const Settings = () => {
       navigate("/");
     }
   }, [userRole, navigate]);
+
+  // Fetch admin name
+  useEffect(() => {
+    const getAdminName = async () => {
+      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+      if (userDoc.exists()) {
+        setAdminName(userDoc.data().name);
+      }
+    };
+    getAdminName();
+  }, [currentUser.uid]);
 
   // Fetch all users
   useEffect(() => {
@@ -60,15 +104,46 @@ const Settings = () => {
     }
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete user "${userName}"? This action cannot be undone.`
+      `Are you sure you want to delete user "${userName}"? This will delete their account and all associated data. This action cannot be undone.`
     );
 
     if (confirmDelete) {
       try {
-        await deleteDoc(doc(db, "users", userId));
+        const auth = getAuth();
+        const idToken = await auth.currentUser.getIdToken();
+
+        // Use different URL for dev vs production
+        const apiUrl = import.meta.env.DEV 
+          ? 'http://localhost:3001/api/deleteUser'  // Local dev server
+          : '/api/deleteUser';                       // Vercel production
+
+        console.log('🔍 Calling API:', apiUrl);
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userId,
+            adminUid: currentUser.uid,
+            idToken: idToken,
+          }),
+        });
+
+        console.log('📡 API Response status:', response.status);
+
+        const data = await response.json();
+        console.log('📦 API Response data:', data);
+
+        if (response.ok && data.success) {
+          alert(`User "${userName}" has been deleted successfully`);
+        } else {
+          throw new Error(data.error || 'Failed to delete user');
+        }
       } catch (error) {
-        console.error("Error deleting user:", error);
-        alert("Failed to delete user");
+        console.error("❌ Error deleting user:", error);
+        alert("Failed to delete user: " + error.message);
       }
     }
   };
@@ -88,14 +163,14 @@ const Settings = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Compact Header */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-gray-800 mb-3 text-sm"
+            className="flex items-center text-gray-600 hover:text-gray-800 mb-2 sm:mb-3 text-xs sm:text-sm transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 mr-1"
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -110,56 +185,73 @@ const Settings = () => {
             Back
           </button>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
                 User Management
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
                 Manage users and their roles
               </p>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span className="font-medium">{filteredUsers.length}</span>
-              <span>users</span>
-            </div>
+            <button
+              onClick={() => setShowRegisterModal(true)}
+              className="px-3 py-2 sm:px-4 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark active:bg-dimo-dark transition-colors flex items-center space-x-1.5 sm:space-x-2 text-sm sm:text-base whitespace-nowrap shadow-sm hover:shadow-md flex-shrink-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span className="hidden sm:inline">Add User</span>
+              <span className="sm:hidden">Add</span>
+            </button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Search */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Search Users
-              </label>
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent"
-              />
-            </div>
+<div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 mb-3 sm:mb-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+    {/* Search */}
+    <div>
+      <label className="block text-xs font-medium text-gray-700 mb-1">
+        Search
+      </label>
+      <input
+        type="text"
+        placeholder="Name or email..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent transition-shadow"
+      />
+    </div>
 
-            {/* Role Filter */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Filter by Role
-              </label>
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent"
-              >
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="employee">Employee</option>
-              </select>
-            </div>
-          </div>
-        </div>
+    {/* Role Filter */}
+    <div>
+      <label className="block text-xs font-medium text-gray-700 mb-1">
+        Role
+      </label>
+      <select
+        value={filterRole}
+        onChange={(e) => setFilterRole(e.target.value)}
+        className="w-full px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent transition-shadow"
+      >
+        <option value="all">All Roles</option>
+        <option value="admin">Admin</option>
+        <option value="employee">Employee</option>
+      </select>
+    </div>
+  </div>
+</div>
 
         {/* Users Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -278,6 +370,318 @@ const Settings = () => {
             </p>
           </div>
         </div>
+
+        {/* Register Modal */}
+        {showRegisterModal && (
+          <RegisterEmployeeModal
+            onClose={() => setShowRegisterModal(false)}
+            adminName={adminName}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Register Employee Modal Component
+const RegisterEmployeeModal = ({ onClose, adminName }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "employee",
+  });
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    name: "",
+    email: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
+
+  // Validation functions
+  const validateName = (name) => {
+    if (!name.trim()) return "Name is required";
+    if (name.trim().length < 2) return "Name must be at least 2 characters";
+    if (name.trim().length > 50) return "Name is too long (max 50 characters)";
+    if (!/^[a-zA-Z\s'-]+$/.test(name)) {
+      return "Name can only contain letters, spaces, hyphens, and apostrophes";
+    }
+    return "";
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) return "Email is required";
+    if (!emailRegex.test(email)) return "Please enter a valid email address";
+    if (email.length > 254) return "Email is too long";
+    return "";
+  };
+
+  // Generate random password
+  const generatePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@$!%*?&";
+    let password = "";
+    
+    // Ensure at least one of each type
+    password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+    password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+    password += "0123456789"[Math.floor(Math.random() * 10)];
+    password += "@$!%*?&"[Math.floor(Math.random() * 7)];
+    
+    // Fill the rest
+    for (let i = password.length; i < length; i++) {
+      password += charset[Math.floor(Math.random() * charset.length)];
+    }
+    
+    // Shuffle password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (value) {
+      let errorMsg = "";
+      if (name === "name") errorMsg = validateName(value);
+      if (name === "email") errorMsg = validateEmail(value);
+      setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
+    } else {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (!value) return;
+
+    let errorMsg = "";
+    if (name === "name") errorMsg = validateName(value);
+    if (name === "email") errorMsg = validateEmail(value);
+    setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
+  };
+
+  // REPLACE THE ENTIRE handleSubmit FUNCTION WITH THIS:
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    const nameError = validateName(formData.name);
+    const emailError = validateEmail(formData.email);
+
+    setFieldErrors({
+      name: nameError,
+      email: emailError,
+    });
+
+    if (nameError || emailError) {
+      setError("Please fix all validation errors");
+      return;
+    }
+
+    if (loading) return;
+
+    let secondaryApp = null; // Declare outside try block
+
+    try {
+      setLoading(true);
+      
+      // Generate password
+      const password = generatePassword();
+      
+      // Create a secondary Firebase app instance
+      secondaryApp = initializeApp(
+        {
+          apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+          appId: import.meta.env.VITE_FIREBASE_APP_ID,
+        },
+        "Secondary" // Name for the secondary app
+      );
+
+      const secondaryAuth = getAuth(secondaryApp);
+
+      // Create user with secondary auth (won't affect current session)
+      const userCredential = await createUserWithEmailAndPassword(
+        secondaryAuth,
+        formData.email.toLowerCase().trim(),
+        password
+      );
+
+      // Create user document in Firestore
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        name: formData.name.trim(),
+        email: formData.email.toLowerCase().trim(),
+        role: formData.role,
+        createdAt: new Date().toISOString(),
+        isFirstLogin: true,
+        mustChangePassword: true,
+      });
+
+      // Sign out from secondary auth
+      await secondaryAuth.signOut();
+
+      // Send email notification
+      await sendWelcomeEmail(
+        formData.email,
+        formData.name,
+        password,
+        adminName,
+        formData.role
+      );
+
+      alert(`Employee registered successfully! Welcome email sent to ${formData.email}`);
+      onClose();
+    } catch (err) {
+      console.error("Registration error:", err);
+      
+      if (err.code === "auth/email-already-in-use") {
+        setError("This email is already registered");
+      } else {
+        setError(err.message || "Failed to register employee");
+      }
+    } finally {
+      // Delete the secondary app in finally block
+      if (secondaryApp) {
+        try {
+          await deleteApp(secondaryApp);
+        } catch (deleteError) {
+          console.error("Error deleting secondary app:", deleteError);
+        }
+      }
+      setLoading(false);
+    }
+  };
+
+  const hasErrors = Object.values(fieldErrors).some((error) => error !== "");
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full">
+        <div className="bg-dimo-blue text-white p-6 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Register New Employee</h2>
+            <button
+              onClick={onClose}
+              className="text-white hover:text-gray-200"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none transition ${
+                  fieldErrors.name
+                    ? "border-red-300 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-dimo-blue"
+                }`}
+                placeholder="Enter employee's full name"
+                maxLength={50}
+                required
+              />
+              {fieldErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none transition ${
+                  fieldErrors.email
+                    ? "border-red-300 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-dimo-blue"
+                }`}
+                placeholder="Enter employee's email"
+                maxLength={254}
+                required
+              />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Role <span className="text-red-600">*</span>
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-dimo-blue focus:border-transparent outline-none transition"
+              >
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-800">
+                <strong>Note:</strong> A secure password will be automatically generated and sent to the employee's email address.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || hasErrors}
+              className="px-6 py-3 bg-dimo-blue text-white rounded-lg hover:bg-dimo-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Registering..." : "Register Employee"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
